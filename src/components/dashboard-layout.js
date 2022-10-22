@@ -19,26 +19,14 @@ export const DashboardLayout = (props) => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    // <AuthGuard>
     <>
       <DashboardLayoutRoot>
-        <Box
-          sx={{
-            display: 'flex',
-            flex: '1 1 auto',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
+        <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', width: '100%'}}>
           {children}
         </Box>
       </DashboardLayoutRoot>
       <DashboardNavbar onSidebarOpen={() => setSidebarOpen(true)} />
-      <DashboardSidebar
-        // onClose={() => setSidebarOpen(false)}
-        // open={isSidebarOpen}
-      />
+      <DashboardSidebar onClose={() => setSidebarOpen(false)} open={isSidebarOpen} />
     </>
-    // </AuthGuard>
   );
 };
