@@ -10,14 +10,10 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
-import { blue } from '@mui/material/colors';
-import PersonIcon from '@mui/icons-material/Person';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import { Bell as BellIcon } from '../icons/bell';
-import { UserCircle as UserCircleIcon } from '../icons/user-circle';
-import { Users as UsersIcon } from '../icons/users';
 import { AccountPopover } from './account-popover';
+import { useSelector, useDispatch } from 'react-redux';
+import { userActions } from '../store/index';
 // ##
 import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
 import WalletConnect from "@walletconnect/web3-provider";
@@ -99,6 +95,12 @@ SimpleDialog.propTypes = {
 
 
 export const DashboardNavbar = (props) => {
+  //## redux stuff
+  const dispatch = useDispatch();
+  const userAddress = useSelector((state) => state.address);
+  const isConnected = useSelector((state) => state.isConnected);
+
+
   const { onSidebarOpen, ...other } = props;
   const settingsRef = useRef(null);
    const [openAccountPopover, setOpenAccountPopover] = useState(false);
@@ -121,7 +123,7 @@ export const DashboardNavbar = (props) => {
   //Wallet connect
   const [provider, setProvider] = useState();
   const [library, setLibrary] = useState();
-  const [account, setAccount] = useState();
+  // const [account, setAccount] = useState();
   const [network, setNetwork] = useState();
 
   const connectWallet = async () => {
@@ -133,7 +135,9 @@ export const DashboardNavbar = (props) => {
     setProvider(provider);
     setLibrary(library);
     if (accounts) {
-      setAccount(accounts[0]);
+      dispatch(userActions.userAccount(accounts[0]));
+      dispatch(userActions.connecion());
+      localStorage.setItem("userAddress", accounts[0]);
     }
     setNetwork(network);
    } catch (error) {
@@ -143,13 +147,15 @@ export const DashboardNavbar = (props) => {
 
  const disconnect = async () => {
   await web3Modal.clearCachedProvider();
+  localStorage.clear();
+  dispatch(userActions.connecion());
   refreshState();
 };
 
 const refreshState = () => {
-  setAccount();
+  // setAccount();
   //setChainId();
-  //setNetwork("");
+  setNetwork("");
   //setMessage("");
   //setSignature("");
   //setVerified(undefined);
@@ -157,71 +163,45 @@ const refreshState = () => {
 
   return (
     <>
-      <DashboardNavbarRoot
-        sx={{
-          left: {
-            lg: 280
-          },
-          width: {
-            lg: 'calc(100% - 280px)'
-          }
-        }}
-        {...other}>
-        <Toolbar
-          disableGutters
-          sx={{
-            minHeight: 64,
-            left: 0,
-            px: 2
-          }}
-        >
-          <IconButton
-            onClick={onSidebarOpen}
-            sx={{
-              display: {
-                xs: 'inline-flex',
-                lg: 'none'
-              }
-            }}
-          >
+      <DashboardNavbarRoot sx={{ left: { lg: 280 }, width: { lg: 'calc(100% - 280px)' }}} {...other}>
+        <Toolbar disableGutters sx={{ minHeight: 64, left: 0, px: 2}}>
+          <IconButton onClick={onSidebarOpen} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}>
             <MenuIcon fontSize="small" />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
           <>
-          {!account ? (
-          <Button variant="outlined" onClick={connectWallet}>
-            Connect Wallet
-          </Button>):(
-          <Button variant="outlined" onClick={disconnect}>
-            Disconect
-          </Button>
-          )}
+            {!isConnected ? (
+              <Button variant="outlined" onClick={connectWallet}>
+                Connect Wallet
+              </Button>) : (
+                <Button variant="outlined" color='success'
+                  onClick={() => setOpenAccountPopover(true)}
+                  ref={settingsRef}
+                  sx={{
+                    cursor: 'pointer',
+                    ml: 1
+                  }}>
+                  Connected
+                </Button>
+              )}
           </>
-          <Button variant="outlined" 
+          {/* <Button variant="outlined" 
             onClick={handleClickOpen}
             sx={{
               cursor: 'pointer',
               ml: 1
             }}>
             Connect
-          </Button>
-          <Button variant="outlined" 
-            onClick={() => setOpenAccountPopover(true)}
-            ref={settingsRef}
-            sx={{
-              cursor: 'pointer',
-              ml: 1
-            }}>
-            Connected
-          </Button>
+          </Button> 
           <SimpleDialog
             selectedValue={selectedValue}
             open={open}
             onClose={handleClose}
-          />
+          />*/}
         </Toolbar>
       </DashboardNavbarRoot>
       <AccountPopover
+        disconnect={disconnect}
         anchorEl={settingsRef.current}
         open={openAccountPopover}
         onClose={() => setOpenAccountPopover(false)}

@@ -1,27 +1,13 @@
-// import NextLink from 'next/link';
-// import { useRouter } from 'next/router';
-//import {BrowserRouter as Router, Link} from 'react-router-dom';
 import { useLocation } from "react-router-dom";
-import PropTypes from 'prop-types';
 import { Box, Button, ListItem } from '@mui/material';
 
 export const NavItem = (props) => {
   const { href, icon, title, ...others } = props;
   const location = useLocation();
   const active = href ? (location.pathname === href) : false;
-  //const active = true;
 
   return (
-    <ListItem
-      disableGutters
-      sx={{
-        display: 'flex',
-        mb: 0.5,
-        py: 0,
-        px: 2
-      }}
-      {...others}
-    >
+    <ListItem disableGutters sx={{ display: 'flex', mb: 0.5, py: 0, px: 2 }} {...others}>
         <Button
           component="a"
           startIcon={icon}
@@ -53,8 +39,4 @@ export const NavItem = (props) => {
   );
 };
 
-NavItem.propTypes = {
-  href: PropTypes.string,
-  icon: PropTypes.node,
-  title: PropTypes.string
-};
+export default NavItem;

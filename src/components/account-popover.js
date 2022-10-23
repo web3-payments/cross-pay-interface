@@ -1,53 +1,15 @@
-import { useContext } from 'react';
-// import Router from 'next/router';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Box, MenuItem, MenuList, Popover, Typography } from '@mui/material';
-//import { AuthContext } from '../contexts/auth-context';
-//import { auth, ENABLE_AUTH } from '../lib/auth';
 
 export const AccountPopover = (props) => {
-  const { anchorEl, onClose, open, ...other } = props;
-  // const authContext = useContext(AuthContext);
+  const userAddress = useSelector((state) => state.address);
+
+  const { anchorEl, onClose, open } = props;
 
   const handleSignOut = async () => {
     onClose?.();
-
-    // Check if authentication with Zalter is enabled
-    // If not enabled, then redirect is not required
-    // if (!ENABLE_AUTH) {
-    //   return;
-    // }
-
-    // Check if auth has been skipped
-    // From sign-in page we may have set "skip-auth" to "true"
-    // If this has been skipped, then redirect to "sign-in" directly
-    // const authSkipped = globalThis.sessionStorage.getItem('skip-auth') === 'true';
-
-    // if (authSkipped) {
-      // Cleanup the skip auth state
-      // globalThis.sessionStorage.removeItem('skip-auth');
-
-      // Redirect to sign-in page
-      // Router
-      //   .push('/sign-in')
-      //   .catch(console.error);
-      // return;
-    //}
-
-    try {
-      // This can be call inside AuthProvider component, but we do it here for simplicity
-      // await auth.signOut();
-
-      // Update Auth Context state
-      // authContext.signOut();
-
-      // Redirect to sign-in page
-      // Router
-      //   .push('/sign-in')
-      //   .catch(console.error);
-    } catch (err) {
-      console.error(err);
-    }
+    props.disconnect();
   };
 
   return (
@@ -60,9 +22,8 @@ export const AccountPopover = (props) => {
       onClose={onClose}
       open={open}
       PaperProps={{
-        sx: { width: '300px' }
+        sx: { width: '340px' }
       }}
-      {...other}
     >
       <Box
         sx={{
@@ -77,7 +38,7 @@ export const AccountPopover = (props) => {
           color="text.secondary"
           variant="body2"
         >
-          John Doe
+          {userAddress}
         </Typography>
       </Box>
       <MenuList
@@ -94,15 +55,9 @@ export const AccountPopover = (props) => {
         }}
       >
         <MenuItem onClick={handleSignOut}>
-          Sign out
+          Disconect
         </MenuItem>
       </MenuList>
     </Popover>
   );
-};
-
-AccountPopover.propTypes = {
-  anchorEl: PropTypes.any,
-  onClose: PropTypes.func,
-  open: PropTypes.bool.isRequired
 };

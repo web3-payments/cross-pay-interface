@@ -7,22 +7,26 @@ import {
   InputAdornment,
   SvgIcon, Typography
 } from '@mui/material';
-import { Search as SearchIcon } from '../../icons/search';
-import { Upload as UploadIcon } from '../../icons/upload';
-import { Download as DownloadIcon } from '../../icons/download';
+import * as React from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import PaymentLinkCreation from '../payment-create/payment-link';
 
-export const CustomerListToolbar = (props) => {
+export const PaymentListToolbar = (props) => {
+  const [paymentLinkOpen, setPaymentLinkOpen] = React.useState(false);
+  const handleClickOpen = () => {
+    setPaymentLinkOpen(true);
+  };
   return (
-    <>
     <Box>
       <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', m: -1 }}>
         <Typography sx={{ m: 1 }} variant="h4">
-          Customer
+          Payments
         </Typography>
         <Box sx={{ m: 1 }}>
-          <Button color="primary" variant="contained">
-            Create Customer
+          <Button onClick={handleClickOpen} color="primary" variant="contained">
+            Create Payment Link
           </Button>
+          <PaymentLinkCreation open={paymentLinkOpen} setOpen={setPaymentLinkOpen} />
         </Box>
       </Box>
       <Box sx={{ mt: 3 }}>
@@ -43,7 +47,7 @@ export const CustomerListToolbar = (props) => {
                     </InputAdornment>
                   )
                 }}
-                placeholder="Search customers"
+                placeholder="Search payments"
                 variant="outlined"
               />
             </Box>
@@ -51,9 +55,8 @@ export const CustomerListToolbar = (props) => {
         </Card>
       </Box>
     </Box>
-  </>
-);
+  );
 };
 
-export default CustomerListToolbar;
+export default PaymentListToolbar;
 

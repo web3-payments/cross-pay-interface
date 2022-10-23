@@ -9,11 +9,14 @@ import { TotalCustomers } from '../components/dashboard/total-customers';
 import { TotalProfit } from '../components/dashboard/total-profit';
 import { TrafficByDevice } from '../components/dashboard/traffic-by-device';
 import { DashboardLayout } from '../components/dashboard-layout';
+import { useSelector } from 'react-redux';
+import LoggedOutPage from './logged-out';
 
-const Main = (props) => {
-
-    return (
-    <DashboardLayout>
+const Dashboard = (props) => {
+  const isConnected = useSelector((state) => state.isConnected);
+  return (
+  <DashboardLayout>
+    {isConnected ? (
       <Box component="main" sx={{ flexGrow: 1, py: 8 }}>
         <Container maxWidth={false}>
           <Grid container spacing={3}>
@@ -29,12 +32,12 @@ const Main = (props) => {
             <Grid item xl={3} lg={3} sm={6} xs={12}>
               <TotalProfit sx={{ height: '100%' }} />
             </Grid>
-            {/* <Grid item lg={8} md={12} xl={9} xs={12}>
+            <Grid item lg={8} md={12} xl={9} xs={12}>
               <Sales />
-            </Grid> */}
-            {/* <Grid item lg={4} md={6} xl={3} xs={12} >
+            </Grid>
+            <Grid item lg={4} md={6} xl={3} xs={12} >
               <TrafficByDevice sx={{ height: '100%' }} />
-            </Grid> */}
+            </Grid>
             <Grid item lg={4} md={6} xl={3} xs={12}>
               <LatestProducts sx={{ height: '100%' }} />
             </Grid>
@@ -44,10 +47,9 @@ const Main = (props) => {
           </Grid>
         </Container>
       </Box>
-    </DashboardLayout>
-    )
-
+      ):(<LoggedOutPage/>)}
+  </DashboardLayout>
+  )
 };
 
-
-export default Main;
+export default Dashboard;
