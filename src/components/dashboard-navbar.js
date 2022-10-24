@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useRef, useState } from 'react';
+import axios from "axios";
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { AppBar, Avatar, Badge, Box, IconButton, Toolbar, Tooltip } from '@mui/material';
@@ -14,6 +15,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { AccountPopover } from './account-popover';
 import { useSelector, useDispatch } from 'react-redux';
 import { userActions } from '../store/index';
+import { config } from "../config";
 // ##
 import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
 import WalletConnect from "@walletconnect/web3-provider";
@@ -25,23 +27,23 @@ require('dotenv').config()
 
 export const providerOptions = {
   coinbasewallet: {
-    package: CoinbaseWalletSDK, 
+    package: CoinbaseWalletSDK,
     options: {
       appName: "Web 3 Modal Demo",
-      infuraId: process.env.REACT_APP_INFURA_KEY 
+      infuraId: process.env.REACT_APP_INFURA_KEY
     }
   },
   walletconnect: {
-    package: WalletConnect, 
+    package: WalletConnect,
     options: {
-      infuraId: process.env.REACT_APP_INFURA_KEY 
+      infuraId: process.env.REACT_APP_INFURA_KEY
     }
   }
- };
- 
- const web3Modal = new Web3Modal({
-   providerOptions // required
- });
+};
+
+const web3Modal = new Web3Modal({
+  providerOptions // required
+});
 
 const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -49,7 +51,7 @@ const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
 }));
 
 const supportedBlockchains = ["Ethereum", "Solana "];
-  
+
 function SimpleDialog(props) {
 
   const { onClose, selectedValue, open } = props;
@@ -76,7 +78,7 @@ function SimpleDialog(props) {
             <ListItemAvatar>
               {/* TODO: change avatar for icone image */}
               <Avatar sx={{ width: 30, height: 50 }}
-                  src="\static\images\chains\ethereum_logo.png">
+                src="\static\images\chains\ethereum_logo.png">
               </Avatar>
             </ListItemAvatar>
             <ListItemText primary={blockchain} />
@@ -88,9 +90,9 @@ function SimpleDialog(props) {
 }
 
 SimpleDialog.propTypes = {
- onClose: PropTypes.func.isRequired,
- open: PropTypes.bool.isRequired,
- selectedValue: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+  open: PropTypes.bool.isRequired,
+  selectedValue: PropTypes.string.isRequired,
 };
 
 
@@ -103,23 +105,23 @@ export const DashboardNavbar = (props) => {
 
   const { onSidebarOpen, ...other } = props;
   const settingsRef = useRef(null);
-   const [openAccountPopover, setOpenAccountPopover] = useState(false);
-   
-   const [open, setOpen] = React.useState(false);
-   const [selectedValue, setSelectedValue] = React.useState(
-     supportedBlockchains[1]
-   );
- 
-   const handleClickOpen = () => {
-     setOpen(true);
-   };
- 
-   const handleClose = (value) => {
-     setOpen(false);
-     setSelectedValue(value);
-   };
-  
-   
+  const [openAccountPopover, setOpenAccountPopover] = useState(false);
+
+  const [open, setOpen] = React.useState(false);
+  const [selectedValue, setSelectedValue] = React.useState(
+    supportedBlockchains[1]
+  );
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = (value) => {
+    setOpen(false);
+    setSelectedValue(value);
+  };
+
+
   //Wallet connect
   const [provider, setProvider] = useState();
   const [library, setLibrary] = useState();
@@ -127,44 +129,115 @@ export const DashboardNavbar = (props) => {
   const [network, setNetwork] = useState();
 
   const connectWallet = async () => {
-   try {
-    const provider = await web3Modal.connect();
-    const library = new ethers.providers.Web3Provider(provider);
-    const accounts = await library.listAccounts();
-    const network = await library.getNetwork();
+    let provider;
+    let library;
+    let accounts;
+    let network;
+    
+    try {
+      provider = await web3Modal.connect();
+      library = new ethers.providers.Web3Provider(provider);
+      accounts = await library.listAccounts();
+      network = await library.getNetwork();
+    } catch (error) {
+      console.error(error);
+    }
+
     setProvider(provider);
     setLibrary(library);
-    if (accounts) {
-      dispatch(userActions.userAccount(accounts[0]));
-      dispatch(userActions.connecion());
-      localStorage.setItem("userAddress", accounts[0]);
-    }
     setNetwork(network);
-   } catch (error) {
-     console.error(error);
-   }
- };
 
- const disconnect = async () => {
-  await web3Modal.clearCachedProvider();
-  localStorage.clear();
-  dispatch(userActions.connecion());
-  refreshState();
-};
+    if (accounts) {     
+      const address = accounts[0];
+      dispatch(userActions.userAccount(address));
+      dispatch(userActions.connecion());
+      localStorage.setItem("userAddress", address);
+  
+      const signature = await signMessage(library)
+      .catch((error) => {
+        console.error(error)
+      });
 
-const refreshState = () => {
-  // setAccount();
-  //setChainId();
-  setNetwork("");
-  //setMessage("");
-  //setSignature("");
-  //setVerified(undefined);
-};
+      const newUser = {
+        accounts: [
+          {
+            address: address
+          }
+        ],
+        signature: signature,
+        signerAddress: address
+      };
+
+      checkAndCreateUser(newUser).catch((error) => {
+        console.error(error)
+      })
+
+    }
+
+  }; 
+
+  const signMessage = async (library) => {
+    try {
+      const signature = await library.provider.request({
+        method: "personal_sign",
+        params: ["Log in CrossPay", userAddress]
+      });
+      return signature;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  const checkAndCreateUser = async (newUser) => {
+    await axios
+      .get(`${config.contextRoot}/user/${newUser.signerAddress}`)
+      .then(function (response) {
+        console.log(response);
+        if(response.status === 200){
+          console.log("User already register")
+          return;
+        }
+      }).catch(function (error) {
+        if(error.response.status === 404){
+          createUser(newUser).catch((error) => {
+            console.error(error)
+          })
+        }
+      });
+  }
+  
+  const createUser = async (newUser) => {
+    await axios
+      .post(`${config.contextRoot}/user`, newUser)
+      .then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  const disconnect = async () => {
+    await web3Modal.clearCachedProvider();
+    localStorage.clear();
+    dispatch(userActions.connecion());
+    refreshState();
+  };
+
+
+  const refreshState = () => {
+    // setAccount();
+    //setChainId();
+    setNetwork("");
+    //setMessage("");
+    //setSignature("");
+    //setVerified(undefined);
+  };
 
   return (
     <>
-      <DashboardNavbarRoot sx={{ left: { lg: 280 }, width: { lg: 'calc(100% - 280px)' }}} {...other}>
-        <Toolbar disableGutters sx={{ minHeight: 64, left: 0, px: 2}}>
+      <DashboardNavbarRoot sx={{ left: { lg: 280 }, width: { lg: 'calc(100% - 280px)' } }} {...other}>
+        <Toolbar disableGutters sx={{ minHeight: 64, left: 0, px: 2 }}>
           <IconButton onClick={onSidebarOpen} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}>
             <MenuIcon fontSize="small" />
           </IconButton>
@@ -174,16 +247,16 @@ const refreshState = () => {
               <Button variant="outlined" onClick={connectWallet}>
                 Connect Wallet
               </Button>) : (
-                <Button variant="outlined" color='success'
-                  onClick={() => setOpenAccountPopover(true)}
-                  ref={settingsRef}
-                  sx={{
-                    cursor: 'pointer',
-                    ml: 1
-                  }}>
-                  Connected
-                </Button>
-              )}
+              <Button variant="outlined" color='success'
+                onClick={() => setOpenAccountPopover(true)}
+                ref={settingsRef}
+                sx={{
+                  cursor: 'pointer',
+                  ml: 1
+                }}>
+                Connected
+              </Button>
+            )}
           </>
           {/* <Button variant="outlined" 
             onClick={handleClickOpen}
@@ -205,7 +278,7 @@ const refreshState = () => {
         anchorEl={settingsRef.current}
         open={openAccountPopover}
         onClose={() => setOpenAccountPopover(false)}
-        />
+      />
     </>
   );
 };
