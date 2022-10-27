@@ -3,10 +3,24 @@ import { AccountProfile } from '../components/account/account-profile';
 import { AccountProfileDetails } from '../components/account/account-profile-details';
 import { DashboardLayout } from '../components/dashboard-layout';
 import { useSelector } from 'react-redux';
+import { useQuery } from 'react-query';
+import { useState } from 'react';
 import LoggedOutPage from './logged-out';
+import { config } from "../config";
+import axios from "axios";
 
 export const Accounts = () => {
   const isConnected = useSelector((state) => state.isConnected);
+  const userAddress = useSelector((state) => state.address);
+  const [userData, setUserData] = useState();
+  useQuery(["getUserData"], 
+    async() => 
+      await axios 
+        .get(`${config.contextRoot}/user/${userAddress}`)
+        .then((res) => setUserData(res.data)), 
+        { refetchOnWindowFocus: false}
+    );
+
   return (
     <DashboardLayout>
     {isConnected ? (
@@ -17,10 +31,10 @@ export const Accounts = () => {
           </Typography>
           <Grid container spacing={3}>
             <Grid item lg={4} md={6} xs={12}>
-              <AccountProfile />
+              <AccountProfile user={userData} />
             </Grid>
             <Grid item lg={8} md={6} xs={12}>
-              <AccountProfileDetails />
+              <AccountProfileDetails user={userData} updateUser={setUserData}/>
             </Grid>
           </Grid>
         </Container>
