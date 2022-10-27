@@ -1,23 +1,12 @@
 import { useState } from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import PropTypes from 'prop-types';
 import { format } from 'date-fns';
-import {
-  Avatar,
-  Box,
-  Card,
-  Checkbox,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography
-} from '@mui/material';
+import { Avatar, Box, Card, IconButton, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography } from '@mui/material';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { getInitials } from '../../utils/get-initials';
 
-export const CustomerListResults = ({ customers, ...rest }) => {
+export const WalletListResults = ({ customers, ...rest }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -70,7 +59,7 @@ export const CustomerListResults = ({ customers, ...rest }) => {
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox">
-                  <Checkbox
+                  {/* <Checkbox
                     checked={selectedCustomerIds.length === customers.length}
                     color="primary"
                     indeterminate={
@@ -78,22 +67,22 @@ export const CustomerListResults = ({ customers, ...rest }) => {
                       && selectedCustomerIds.length < customers.length
                     }
                     onChange={handleSelectAll}
-                  />
+                  /> */}
                 </TableCell>
                 <TableCell>
-                  Name
+                  Account name
                 </TableCell>
                 <TableCell>
-                  Email
+                  Address
                 </TableCell>
                 <TableCell>
-                  Location
-                </TableCell>
-                <TableCell>
-                  Phone
+                  Blockchain
                 </TableCell>
                 <TableCell>
                   Registration date
+                </TableCell>
+                <TableCell>
+                  Options
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -105,11 +94,11 @@ export const CustomerListResults = ({ customers, ...rest }) => {
                   selected={selectedCustomerIds.indexOf(customer.id) !== -1}
                 >
                   <TableCell padding="checkbox">
-                    <Checkbox
+                    {/* <Checkbox
                       checked={selectedCustomerIds.indexOf(customer.id) !== -1}
                       onChange={(event) => handleSelectOne(event, customer.id)}
                       value="true"
-                    />
+                    /> */}
                   </TableCell>
                   <TableCell>
                     <Box
@@ -118,12 +107,12 @@ export const CustomerListResults = ({ customers, ...rest }) => {
                         display: 'flex'
                       }}
                     >
-                      <Avatar
+                      {/* <Avatar
                         src={customer.avatarUrl}
                         sx={{ mr: 2 }}
                       >
-                        {getInitials(customer.name)}
-                      </Avatar>
+                        
+                      </Avatar> */}
                       <Typography
                         color="textPrimary"
                         variant="body1"
@@ -139,10 +128,15 @@ export const CustomerListResults = ({ customers, ...rest }) => {
                     {`${customer.address.city}, ${customer.address.state}, ${customer.address.country}`}
                   </TableCell>
                   <TableCell>
-                    {customer.phone}
-                  </TableCell>
-                  <TableCell>
                     {format(customer.createdAt, 'dd/MM/yyyy')}
+                  </TableCell>
+                  <TableCell>          
+                  <IconButton color="primary" aria-label="edit" component="label">
+                    <EditOutlinedIcon />
+                  </IconButton>          
+                  <IconButton color="primary" aria-label="delete" component="label">
+                    <DeleteOutlineOutlinedIcon />
+                  </IconButton>
                   </TableCell>
                 </TableRow>
               ))}

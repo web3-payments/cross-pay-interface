@@ -1,8 +1,9 @@
-import { Box, Button, Divider, Drawer, useMediaQuery } from '@mui/material';
+import { Box, Divider, Drawer, useMediaQuery } from '@mui/material';
 import { ChartBar as ChartBarIcon } from '../icons/chart-bar';
 import { Cog as CogIcon } from '../icons/cog';
 import { ShoppingBag as ShoppingBagIcon } from '../icons/shopping-bag';
 import { User as UserIcon } from '../icons/user';
+import WalletIcon from '@mui/icons-material/Wallet';
 import { Users as UsersIcon } from '../icons/users';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import { Logo } from './logo';
@@ -35,8 +36,13 @@ const items = [
     title: 'Account'
   },
   {
+    href: '/wallets',
+    icon: (<WalletIcon />),
+    title: 'Wallets'
+  },
+  {
     href: '/settings',
-    icon: (<CogIcon fontSize="small" />),
+    icon: (<CogIcon />),
     title: 'Settings'
   }
 ];

@@ -10,6 +10,7 @@ import Accounts from './pages/accounts'
 import Settings from './pages/settings'
 import ErrorPage from './pages/error'
 import { registerChartJs } from './utils/register-chart-js';
+import Wallets from './pages/wallets'
 
 registerChartJs();
 
@@ -26,6 +27,7 @@ function App() {
             <Route path="/payments" element={<Payments />}/>
             <Route path="/products" element={<Products />}/>
             <Route path="/accounts" element={<Accounts />}/>
+            <Route path="/wallets" element={<Wallets />}/>
             <Route path="/settings" element={<Settings />}/>
             <Route path="/error" element={<ErrorPage />}/>
             <Route path="/crypto-payment/:paymentHash" element={<PaymentPage />}/>
