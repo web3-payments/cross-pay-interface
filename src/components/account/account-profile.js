@@ -7,9 +7,9 @@ export const AccountProfile = (props) => {
         <Box sx={{ alignItems: 'center', display: 'flex',flexDirection: 'column'}} >
           <Avatar src="/static/images/avatars/web3_avatar.png" sx={{ height: 64, mb: 2, width: 64 }}/>
           <Typography color="textPrimary" gutterBottom variant="h5">
-            {props.user?.firstName === undefined ? 
+            {props.user?.companyName === undefined ? 
               ("") : 
-              (`${props.user?.firstName} ${props.user?.lastName}`)
+              (`${props.user?.companyName}`)
             }
           </Typography>
           <Typography color="textSecondary" variant="body2" >

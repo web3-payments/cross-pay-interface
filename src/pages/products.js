@@ -11,7 +11,7 @@ export const Products = () => {
     <DashboardLayout>
       {isConnected ? (
         <Box component="main" sx={{ flexGrow: 1, py: 8 }}>
-          <Container maxWidth={false}>
+          <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
             <ProductListToolbar />
             <Box sx={{ pt: 3 }}>
               <Grid container spacing={3}>

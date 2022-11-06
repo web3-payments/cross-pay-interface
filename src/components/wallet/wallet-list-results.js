@@ -3,10 +3,10 @@ import PerfectScrollbar from 'react-perfect-scrollbar';
 import { format } from 'date-fns';
 import { Avatar, Box, Card, IconButton, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import IosShareIcon from '@mui/icons-material/IosShare';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { getInitials } from '../../utils/get-initials';
 
-export const WalletListResults = ({ customers, ...rest }) => {
+export const WalletListResults = ({ wallets }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -15,7 +15,7 @@ export const WalletListResults = ({ customers, ...rest }) => {
     let newSelectedCustomerIds;
 
     if (event.target.checked) {
-      newSelectedCustomerIds = customers.map((customer) => customer.id);
+      newSelectedCustomerIds = wallets.map((customer) => customer.address);
     } else {
       newSelectedCustomerIds = [];
     }
@@ -52,7 +52,7 @@ export const WalletListResults = ({ customers, ...rest }) => {
   };
 
   return (
-    <Card {...rest}>
+    <Card>
       <PerfectScrollbar>
         <Box sx={{ minWidth: 1050 }}>
           <Table>
@@ -86,12 +86,13 @@ export const WalletListResults = ({ customers, ...rest }) => {
                 </TableCell>
               </TableRow>
             </TableHead>
+            {wallets && 
             <TableBody>
-              {customers.slice(0, limit).map((customer) => (
+              {wallets?.slice(0, limit).map((wallet) => (
                 <TableRow
                   hover
-                  key={customer.id}
-                  selected={selectedCustomerIds.indexOf(customer.id) !== -1}
+                  key={wallet.address}
+                  selected={selectedCustomerIds.indexOf(wallet.address) !== -1}
                 >
                   <TableCell padding="checkbox">
                     {/* <Checkbox
@@ -117,36 +118,47 @@ export const WalletListResults = ({ customers, ...rest }) => {
                         color="textPrimary"
                         variant="body1"
                       >
-                        {customer.name}
+                        {wallet.name}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {customer.email}
+                    {wallet.address}
                   </TableCell>
                   <TableCell>
-                    {`${customer.address.city}, ${customer.address.state}, ${customer.address.country}`}
+                    {`${wallet.blockchain}`}
                   </TableCell>
                   <TableCell>
-                    {format(customer.createdAt, 'dd/MM/yyyy')}
+                    {format(wallet.createdAt, 'dd/MM/yyyy')}
                   </TableCell>
                   <TableCell>          
-                  <IconButton color="primary" aria-label="edit" component="label">
-                    <EditOutlinedIcon />
-                  </IconButton>          
-                  <IconButton color="primary" aria-label="delete" component="label">
-                    <DeleteOutlineOutlinedIcon />
-                  </IconButton>
+                    {wallet.name !== "Default Account" ?
+                      <>
+                        <IconButton color="primary" aria-label="edit" component="label">
+                          <EditOutlinedIcon />
+                        </IconButton>
+                        <IconButton color="primary" aria-label="delete" component="label">
+                          <DeleteOutlineOutlinedIcon />
+                        </IconButton>
+                      </>
+                      :
+                      <a href='/accounts'>
+                        <IconButton color="primary" aria-label="edit" component="label">
+                          <IosShareIcon />
+                        </IconButton>
+                      </a>
+                    }
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
+            }
           </Table>
         </Box>
       </PerfectScrollbar>
       <TablePagination
         component="div"
-        count={customers.length}
+        count={0}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleLimitChange}
         page={page}

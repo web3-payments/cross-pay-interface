@@ -20,6 +20,7 @@ import {
 import { config } from "../../config";
 
 import "./paymentPage.css"
+import PaymentDetails from './PaymentDetails';
 
 const PaymentPage = (props) => {
   const { paymentHash } = useParams()
@@ -33,18 +34,6 @@ const PaymentPage = (props) => {
         {refetchOnWindowFocus: false}
   );
   
-  const [values, setValues] = useState({
-    company: 'Trixie',
-    description: 'Name of what is being offered',
-  });
-
-  const handleChange = (event) => {
-    setValues({
-      ...values,
-      [event.target.name]: event.target.value
-    });
-  };
-
   return (
     <React.Fragment>
       <AppBar position="static" color="primary">
@@ -70,62 +59,12 @@ const PaymentPage = (props) => {
         </Toolbar>
       </AppBar>
       <br/>
-    <Box 
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      margin="20px"
-      minHeight="10vh">
-      <Card>
-        <CardHeader
-          subheader="Amount Due"
-          title={paymentInfo?.amount + ` ` + paymentInfo?.currency } 
-        />
-        <Divider />
-        <CardContent>
-          <Grid container spacing={3} >
-            <Grid
-              item
-              md={12}
-              xs={24}
-            >
-              <Typography
-                  color="inherit"
-                  variant="subtitle1"
-                >
-                  {values.company}
-                </Typography>
-            </Grid>
-            <Grid
-              item
-              md={12}
-              xs={24}
-            >
-              <Typography
-                  color="inherit"
-                  variant="subtitle"
-                >
-                  {paymentInfo?.title}
-                </Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
-        <Divider />
-        <Box
-          sx={{
-            display: 'center',
-            justifyContent: 'center',
-            p: 2
-          }}
-        >
-          <Button
-            color="primary"
-            variant="contained"
-          >
-            Pay {paymentInfo?.amount} {paymentInfo?.currency} 
-          </Button>
-        </Box>
-      </Card>
+      <Box  component="main" sx={{ flexGrow: 1, py: 1 }}>
+      <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <Grid item lg={5}>
+          <PaymentDetails paymentInfo={paymentInfo}/>
+        </Grid>
+      </Grid>
       </Box>
       <div className="footer">Powered by CrossPay | terms | privacy</div>
     </React.Fragment>

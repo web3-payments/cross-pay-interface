@@ -27,6 +27,20 @@ export const AccountProfileDetails = (props) => {
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
+                helperText="Please specify the company name"
+                label="Company name"
+                name="companyName"
+                onChange={handleChange}
+                required
+                value={props.user?.companyName || ''}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={6} xs={12}>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <TextField
+                fullWidth
                 helperText="Please specify the first name"
                 label="First name"
                 name="firstName"

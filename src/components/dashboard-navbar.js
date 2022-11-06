@@ -16,34 +16,35 @@ import { AccountPopover } from './account-popover';
 import { useSelector, useDispatch } from 'react-redux';
 import { userActions } from '../store/index';
 import { config } from "../config";
+import { getWalletProvider } from "../utils/ethereumWalletProvider";
 // ##
-import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
-import WalletConnect from "@walletconnect/web3-provider";
-import Web3Modal from "web3modal";
+// import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
+// import WalletConnect from "@walletconnect/web3-provider";
+// import Web3Modal from "web3modal";
 import { ethers } from 'ethers';
 // ##
 
 require('dotenv').config()
 
-export const providerOptions = {
-  coinbasewallet: {
-    package: CoinbaseWalletSDK,
-    options: {
-      appName: "Web 3 Modal Demo",
-      infuraId: process.env.REACT_APP_INFURA_KEY
-    }
-  },
-  walletconnect: {
-    package: WalletConnect,
-    options: {
-      infuraId: process.env.REACT_APP_INFURA_KEY
-    }
-  }
-};
+// export const providerOptions = {
+//   coinbasewallet: {
+//     package: CoinbaseWalletSDK,
+//     options: {
+//       appName: "Web 3 Modal Demo",
+//       infuraId: process.env.REACT_APP_INFURA_KEY
+//     }
+//   },
+//   walletconnect: {
+//     package: WalletConnect,
+//     options: {
+//       infuraId: process.env.REACT_APP_INFURA_KEY
+//     }
+//   }
+// };
 
-const web3Modal = new Web3Modal({
-  providerOptions // required
-});
+// const web3Modal = new Web3Modal({
+//   providerOptions // required
+// });
 
 const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -133,47 +134,50 @@ export const DashboardNavbar = (props) => {
     let library;
     let accounts;
     let network;
-    
     try {
-      provider = await web3Modal.connect();
+      provider = await getWalletProvider().connect();
       library = new ethers.providers.Web3Provider(provider);
       accounts = await library.listAccounts();
       network = await library.getNetwork();
+      console.log("aqui1");
     } catch (error) {
       console.error(error);
     }
 
+    console.log("aqui2");
     setProvider(provider);
     setLibrary(library);
     setNetwork(network);
 
-    if (accounts) {     
+    console.log(network);
+
+    if (accounts) {
       const address = accounts[0];
-      dispatch(userActions.userAccount(address));
-      dispatch(userActions.connecion());
-      localStorage.setItem("userAddress", address);
-  
       const signature = await signMessage(library)
       .catch((error) => {
         console.error(error)
       });
-
+      console.log(new Date().getTime())
       const newUser = {
-        accounts: [
+        wallets: [
           {
-            address: address
+            name: "Default Account",
+            blockchain: "Ethereum", // TODO: enable other login accounts, for now only Ethereum account
+            chainId: network.chainId, 
+            address: address,
+            createdAt: new Date().getTime()
           }
         ],
         signature: signature,
         signerAddress: address
       };
-
       checkAndCreateUser(newUser).catch((error) => {
         console.error(error)
       })
-
+      dispatch(userActions.userAccount(address));
+      dispatch(userActions.connecion());
+      localStorage.setItem("userAddress", address);
     }
-
   }; 
 
   const signMessage = async (library) => {
@@ -218,7 +222,7 @@ export const DashboardNavbar = (props) => {
   }
 
   const disconnect = async () => {
-    await web3Modal.clearCachedProvider();
+    await getWalletProvider().clearCachedProvider();
     localStorage.clear();
     dispatch(userActions.connecion());
     refreshState();

@@ -1,23 +1,14 @@
 import { useState } from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import PropTypes from 'prop-types';
+import { config } from "../../../config";
+import axios from "axios";
 import { format } from 'date-fns';
-import {
-  Avatar,
-  Box,
-  Card,
-  Checkbox,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography
-} from '@mui/material';
-import { getInitials } from '../../../utils/get-initials';
+import { Chip, Box, Card, Checkbox, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
-export const PaymentListResults = ({ customers, ...rest }) => {
+export const PaymentListResults = ({ payments}) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -26,7 +17,7 @@ export const PaymentListResults = ({ customers, ...rest }) => {
     let newSelectedCustomerIds;
 
     if (event.target.checked) {
-      newSelectedCustomerIds = customers.map((customer) => customer.id);
+      newSelectedCustomerIds = payments.map((customer) => customer.id);
     } else {
       newSelectedCustomerIds = [];
     }
@@ -62,87 +53,80 @@ export const PaymentListResults = ({ customers, ...rest }) => {
     setPage(newPage);
   };
 
+  const cancelPayment = async (hash) => {
+    await axios.post(`${config.contextRoot}/payment/${hash}/cancellation`);
+  }
+
+  const paymentStatusTag = (param) => {
+    switch(param) {
+      case 'CREATED':
+        return <Chip label={param} color='info'/>;
+      case 'PAID':
+        return <Chip label={param} color='success'/>;
+      case 'CANCELLED':
+        return <Chip label={param} color='error'/>;
+      default:
+        return <Chip label={param} color='warning'/>;
+    }
+  };
+  
   return (
-    <Card {...rest}>
+    <Card>
       <PerfectScrollbar>
         <Box sx={{ minWidth: 1050 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedCustomerIds.length === customers.length}
-                    color="primary"
-                    indeterminate={
-                      selectedCustomerIds.length > 0
-                      && selectedCustomerIds.length < customers.length
-                    }
-                    onChange={handleSelectAll}
-                  />
+                <TableCell>
+                  Amount
                 </TableCell>
                 <TableCell>
-                  Name
+                  Status
                 </TableCell>
                 <TableCell>
-                  Email
+                  Title
                 </TableCell>
                 <TableCell>
-                  Location
+                  Creation date
                 </TableCell>
                 <TableCell>
-                  Phone
-                </TableCell>
-                <TableCell>
-                  Registration date
+                  Options
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {customers.slice(0, limit).map((customer) => (
+              {payments?.slice(0, limit).map((payment) => (
                 <TableRow
                   hover
-                  key={customer.id}
-                  selected={selectedCustomerIds.indexOf(customer.id) !== -1}
+                  key={payment.id}
+                  selected={selectedCustomerIds.indexOf(payment.id) !== -1}
                 >
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedCustomerIds.indexOf(customer.id) !== -1}
-                      onChange={(event) => handleSelectOne(event, customer.id)}
-                      value="true"
-                    />
+                  <TableCell>
+                    {`${payment.amount} - ${payment.currency}`}
                   </TableCell>
                   <TableCell>
-                    <Box
-                      sx={{
-                        alignItems: 'center',
-                        display: 'flex'
-                      }}
-                    >
-                      <Avatar
-                        src={customer.avatarUrl}
-                        sx={{ mr: 2 }}
-                      >
-                        {getInitials(customer.name)}
-                      </Avatar>
-                      <Typography
-                        color="textPrimary"
-                        variant="body1"
-                      >
-                        {customer.name}
-                      </Typography>
-                    </Box>
+                    {paymentStatusTag(payment.paymentStatus)}
                   </TableCell>
                   <TableCell>
-                    {customer.email}
+                    {`${payment.title}`}
                   </TableCell>
                   <TableCell>
-                    {`${customer.address.city}, ${customer.address.state}, ${customer.address.country}`}
+                    {format(Date.parse(payment.createdAt), 'dd/MM/yyyy')} 
                   </TableCell>
                   <TableCell>
-                    {customer.phone}
-                  </TableCell>
-                  <TableCell>
-                    {format(customer.createdAt, 'dd/MM/yyyy')}
+                      <IconButton color="primary" aria-label="edit" component="label"
+                        onClick={() => {navigator.clipboard.writeText(payment.paymentLink)}}>
+                        <ContentCopyIcon />
+                      </IconButton>
+                      <IconButton color="primary" aria-label="edit" component="label">
+                        <ReceiptLongOutlinedIcon />
+                      </IconButton>
+                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && 
+                        <IconButton color="primary" aria-label="cancel" component="label"
+                          onClick={() => {cancelPayment(payment.hash)}}>
+                          <BlockOutlinedIcon />
+                        </IconButton>
+                      }
                   </TableCell>
                 </TableRow>
               ))}
@@ -152,7 +136,7 @@ export const PaymentListResults = ({ customers, ...rest }) => {
       </PerfectScrollbar>
       <TablePagination
         component="div"
-        count={customers.length}
+        count={payments ? payments.length : 0}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleLimitChange}
         page={page}

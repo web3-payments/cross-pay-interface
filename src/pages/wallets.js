@@ -13,12 +13,12 @@ import axios from "axios";
 export const Wallets = () => {
     const isConnected = useSelector((state) => state.isConnected);
     const userAddress = useSelector((state) => state.address);
-    const [userData, setUserData] = useState();
+    const [wallets, setUserWallets] = useState();
     useQuery(["getUserData"], 
       async() => 
         await axios 
-          .get(`${config.contextRoot}/user/${userAddress}`)
-          .then((res) => setUserData(res.data)), 
+          .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+          .then((res) => setUserWallets(res.data)), 
           { refetchOnWindowFocus: false}
       );
   
@@ -29,7 +29,7 @@ export const Wallets = () => {
                     <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
                         <WalletListToolbar />
                         <Box sx={{ mt: 3 }}>
-                            <WalletListResults customers={customers} />
+                            <WalletListResults wallets={wallets} />
                         </Box>
                     </Container>
                 </Box>
