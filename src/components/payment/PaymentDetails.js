@@ -97,61 +97,23 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                         </Grid>
                             <Grid item md={12} xs={12}>
                                 <List dense={true}>
-                                    <ListItem button>
-                                        <ListItemAvatar>
-                                            <Avatar
-                                                alt="Product"
-                                                src="/static/images/products/product_2.png"
-                                                variant="square"
+                                    {paymentInfo.products.length > 0 && 
+                                        paymentInfo.products.map((product) => (
+                                        <ListItem key={product.item.id} button>
+                                            <ListItemAvatar>
+                                                <Avatar
+                                                    alt={product.item?.name}
+                                                    src={`data:image/jpeg;base64,${product.item?.image}`}
+                                                    variant="square"
+                                                />
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={`${product.item?.name} - ${product.item?.price} ${product.item?.token}`}
+                                                secondary={`${product.quantity}x`}
                                             />
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary="Car - 10 SOL"
-                                            secondary={"2x"}
-                                        />
-                                    </ListItem>
-                                    
-                                    <ListItem button>
-                                        <ListItemAvatar>
-                                            <Avatar
-                                                alt="Product"
-                                                src="/static/images/products/product_3.png"
-                                                variant="square"
-                                            />
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary="Book - 1 SOL"
-                                            secondary={"2x"}
-                                        />
-                                    </ListItem>
-                                    <ListItem button>
-                                        <ListItemAvatar>
-                                            <Avatar
-                                                alt="Product"
-                                                src="/static/images/products/product_4.png"
-                                                variant="square"
-                                            />
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary="Car - 10 SOL"
-                                            secondary={"2x"}
-                                        />
-                                    </ListItem>
-                                    
-                                    <ListItem button>
-                                        <ListItemAvatar>
-                                            <Avatar
-                                                alt="Product"
-                                                src="/static/images/products/product_1.png"
-                                                variant="square"
-                                            />
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary="Book - 1 SOL"
-                                            secondary={"2x"}
-                                        />
-                                    </ListItem>
-                                    
+                                        </ListItem>
+
+                                    ))}
                                 </List>
                             </Grid>
                     </Grid>

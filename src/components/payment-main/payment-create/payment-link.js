@@ -4,12 +4,9 @@ import { useSelector } from 'react-redux';
 import { config } from "../../../config";
 import axios from "axios";
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import PaymentModal from './payment-modal';
 
 export const PaymentLinkCreation = (props) => {
@@ -19,11 +16,12 @@ export const PaymentLinkCreation = (props) => {
     props.setOpen(false);
   };
   const [paymentDetails, setPaymentDetails] = useState({
-    companyName: 'Company name',
-    title: 'Description of the payment',
-    amount: '1',
-    currency: 'ETH',
-    paymentType: 'PAYMENT_LINK'
+    companyName: '',
+    title: '',
+    amount: '',
+    currency: '',
+    paymentType: '',
+    products: []
   });
 
   const createLink = async () => {

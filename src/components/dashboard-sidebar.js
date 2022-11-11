@@ -1,4 +1,4 @@
-import { Box, Divider, Drawer, useMediaQuery } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, useMediaQuery } from '@mui/material';
 import { ChartBar as ChartBarIcon } from '../icons/chart-bar';
 import { Cog as CogIcon } from '../icons/cog';
 import { ShoppingBag as ShoppingBagIcon } from '../icons/shopping-bag';
@@ -60,7 +60,7 @@ export const DashboardSidebar = (props) => {
         <div>
           <Box sx={{ p: 3, paddingBottom: 0}}>
             <a href='/'>
-              <Logo sx={{ height: 42, width: 42 }}/>
+              <Avatar src="/static/cpay_wallet_logo.jpg" sx={{ height: 64, mb: 2, width: 64 }}/>
             </a>
           </Box>
         </div>
