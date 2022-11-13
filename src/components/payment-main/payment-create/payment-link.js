@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useQuery } from 'react-query';
 import { config } from "../../../config";
 import axios from "axios";
 import Button from '@mui/material/Button';
@@ -11,18 +12,35 @@ import PaymentModal from './payment-modal';
 
 export const PaymentLinkCreation = (props) => {
   const userAddress = useSelector((state) => state.address);
+  useQuery(["getUserData"], 
+    async() => 
+      await axios 
+        .get(`${config.contextRoot}/user/${userAddress}`)
+        .then((res) => setPaymentDetails({...paymentDetails, ["companyName"]: res.data.companyName}) ), 
+        { refetchOnWindowFocus: false}
+    );
 
   const handleClose = () => {
     props.setOpen(false);
   };
   const [paymentDetails, setPaymentDetails] = useState({
-    companyName: '',
-    title: '',
+    companyName: 'userData?.companyName',
     amount: '',
-    currency: '',
-    paymentType: '',
+    currency: 'ETH',
+    paymentType: 'PAYMENT_LINK',
     products: []
   });
+
+  useEffect(() => {
+    if(paymentDetails.products === undefined || paymentDetails.products.length <= 0) {
+      setPaymentDetails({ ...paymentDetails, ["amount"]: 0 }); 
+      return;
+    }
+    const totalAmount = paymentDetails.products.reduce((accumulator, value) => {
+      return accumulator + (value.item.price * value.quantity);
+    }, 0 )
+     setPaymentDetails({ ...paymentDetails, ["amount"]: totalAmount });
+  }, [JSON.stringify(paymentDetails.products)])
 
   const createLink = async () => {
     console.log(paymentDetails);

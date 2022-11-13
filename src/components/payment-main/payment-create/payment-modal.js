@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Avatar , Box, Button, Select, Card, CardContent, CardHeader, Grid, MenuItem , InputLabel, TextField, FormControl, Divider, IconButton, List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction } from '@mui/material';
+import { 
+    Avatar , Box, Button, Select, Card, CardContent, CardHeader, Checkbox, Grid, MenuItem , InputLabel, TextField, 
+    FormControl, Divider, IconButton, List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction, FormControlLabel,
+    Typography
+    } from '@mui/material';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import PaymentDetails from '../../payment/PaymentDetails';
 import { useSelector } from 'react-redux';
@@ -45,7 +49,6 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const addProduct = () => {
-        console.log(products);
         if(selectedQuantity > selectedProduct.totalSupply){
             alert(`Quantity is greater than ${selectedProduct.name} total supply!`);
             return;
@@ -56,30 +59,29 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
         }
         if(paymentDetails.products.filter((value, index) => value.item.id === selectedProduct.id).length > 0){
             const index = findPaymentDetailsProductsIndex(selectedProduct.id);
-            paymentDetails.products[index].quantity++;
+            paymentDetails.products[index].quantity = Number(selectedQuantity) + Number(paymentDetails.products[index].quantity);
             setPaymentDetails({ ...paymentDetails, "products": paymentDetails.products });
         } else {
             setPaymentDetails({ ...paymentDetails, "products": [...paymentDetails.products, product] });
         }
-        decreaseSupply();
+        decreaseSupply(selectedQuantity);
     }
 
     const removeProduct = (id) => {
         const index = findPaymentDetailsProductsIndex(id);
         increaseSupply(id, paymentDetails.products[index].quantity);
-        console.log(paymentDetails.products);
         setPaymentDetails({ ...paymentDetails, "products": paymentDetails.products.filter((value, index) => value.item.id !== id) });
     }
 
     const increaseSupply = (id, qtd) => {
         const index = findProductIndex(id);
-        products[index].totalSupply = products[index].totalSupply + qtd;
+        products[index].totalSupply = Number(products[index].totalSupply) + Number(qtd);
         setProducts(products);
     }
 
-    const decreaseSupply = () => {
+    const decreaseSupply = (qtd) => {
         const index = findProductIndex(selectedProduct.id);
-        products[index].totalSupply--;
+        products[index].totalSupply = Number(products[index].totalSupply) - Number(qtd);
         setProducts(products);
     }
 
@@ -89,6 +91,14 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
 
     const findPaymentDetailsProductsIndex = (id) => {
         return paymentDetails.products.findIndex(product => product.item.id === id);
+    }
+
+    const handleAdjustableQuantity = (event) => {
+        setPaymentDetails({ ...paymentDetails, "adjustableQuantity":  event.target.value });
+    }
+
+    const handleRequiredInfo = (event) => {
+        setPaymentDetails({...paymentDetails, ["customerRequiredInfo"]: {...paymentDetails.customerRequiredInfo, [event.target.name]: event.target.checked}})
     }
 
     return (
@@ -102,8 +112,8 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                     </Box>
                     <Card sx={{ boxShadow: 'none' }}>
                         <CardHeader
-                            subheader="Provide the information to generate the link"
-                            title="Payment Creation"
+                            subheader="Generated links can be used to obtain online payments easily."
+                            title="Create Payment Link"
                         />
                         <Divider />
                         <CardContent>
@@ -124,29 +134,6 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                                 ))}
                                             </Select>
                                     </FormControl>
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        helperText="Please specify the company name"
-                                        label="Company name"
-                                        name="companyName"
-                                        onChange={handleChange}
-                                        required
-                                        value={paymentDetails?.companyName || ''}
-                                        variant="outlined"
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Title"
-                                        name="title"
-                                        onChange={handleChange}
-                                        required
-                                        value={paymentDetails?.title || ''}
-                                        variant="outlined"
-                                    />
                                 </Grid>
                                 <Grid item md={7} xs={12}>
                                     <FormControl fullWidth >
@@ -180,6 +167,18 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                     <Button color="success" variant="contained" onClick={addProduct}>Add</Button>
                                 </Grid>
                                 <Grid item md={12} xs={12}>
+                                    <FormControlLabel 
+                                        label="Let customer adjust quantity"
+                                        control={
+                                            <Checkbox 
+                                                sx={{ marginLeft: '10px'}}
+                                                onClick={handleAdjustableQuantity}
+                                                value={paymentDetails?.adjustableQuantity | false}
+                                                disabled={paymentDetails.products.length <= 0} />
+                                            } 
+                                    />
+                                </Grid>
+                                <Grid item md={12} xs={12}>
                                     <List dense={true}>
                                     {paymentDetails.products.length > 0 && 
                                         paymentDetails.products.map((product) => (
@@ -205,8 +204,21 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                     ))}
                                     </List>
                                 </Grid>
+                                <Grid item md={12} xs={12}>                    
+                                    <Typography sx={{ m: 1 }} variant="h6">
+                                        Customer Details Required
+                                    </Typography>
+                                </Grid>
+                                <Grid item md={12} xs={12}>
+                                    <FormControlLabel control={<Checkbox name="name" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Name" />
+                                    <FormControlLabel control={<Checkbox name="email" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Email" />
+                                    <FormControlLabel control={<Checkbox name="phoneNumber" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Phone Number" />
+                                    <FormControlLabel control={<Checkbox name="shippingAddress" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Shipping Address" />
+                                    <FormControlLabel control={<Checkbox sx={{ marginLeft: '10px'}} onClick={()=> alert('not implemented yet.')}/>} label="Additional Information" />
+                                </Grid>
                                 <Grid item md={6} xs={12}>
                                     <TextField
+                                        disabled={paymentDetails.products.length > 0}
                                         fullWidth
                                         label="Amount"
                                         name="amount"

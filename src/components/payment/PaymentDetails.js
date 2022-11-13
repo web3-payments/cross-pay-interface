@@ -4,7 +4,8 @@ import * as PaymentContract from "../../abis/payment/PaymentContract.json";
 import { config } from "../../config";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereumWalletProvider";
-
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import {
     Avatar,
     Box,
@@ -15,6 +16,7 @@ import {
     Divider,
     Grid,
     Typography,
+    IconButton, TextField,
     List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction
 } from '@mui/material';
 
@@ -86,36 +88,90 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                 <CardContent>
                     <Grid container spacing={3}>
                         <Grid item md={12} xs={24}>
-                            <Typography color="inherit" variant="subtitle1">
+                            <Typography color="inherit" variant="h5">
                                 {paymentInfo?.companyName}
                             </Typography>
                         </Grid>
-                        <Grid item md={12} xs={24}>
-                            <Typography color="inherit" variant="subtitle">
-                                {paymentInfo?.title}
-                            </Typography>
+                        <Grid item xs={12} lg={12}>
+                            {paymentInfo?.customerRequiredInfo && (paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
+                                <Grid container xs={24} lg={12}>  
+                                    <Grid item xs={24} lg={12}>              
+                                    <Typography sx={{ m: 1 }} variant="h6">
+                                        Contact Information
+                                    </Typography>
+                                    </Grid>
+                                    {paymentInfo?.customerRequiredInfo.name && 
+                                    
+                                    <Grid item md={12} xs={12}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Name"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                    }
+                                    {paymentInfo?.customerRequiredInfo.email && 
+                                    
+                                    <Grid item md={12} xs={12}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Email"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                    }
+                                    {paymentInfo?.customerRequiredInfo.phoneNumber && 
+                                    
+                                    
+                                    <Grid item md={12} xs={12}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Phone number"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                    }
+                                </Grid>
+                            }
                         </Grid>
-                            <Grid item md={12} xs={12}>
-                                <List dense={true}>
-                                    {paymentInfo.products.length > 0 && 
-                                        paymentInfo.products.map((product) => (
-                                        <ListItem key={product.item.id} button>
-                                            <ListItemAvatar>
-                                                <Avatar
-                                                    alt={product.item?.name}
-                                                    src={`data:image/jpeg;base64,${product.item?.image}`}
-                                                    variant="square"
-                                                />
-                                            </ListItemAvatar>
-                                            <ListItemText
-                                                primary={`${product.item?.name} - ${product.item?.price} ${product.item?.token}`}
-                                                secondary={`${product.quantity}x`}
+                        <Grid item md={12} xs={12}>
+                            <List dense={true}>
+                                {paymentInfo?.products.length > 0 && 
+                                    paymentInfo?.products.map((product) => (
+                                    <ListItem key={product.item.id} button>
+                                        <ListItemAvatar>
+                                            <Avatar
+                                                alt={product.item?.name}
+                                                src={`data:image/jpeg;base64,${product.item?.image}`}
+                                                variant="square"
                                             />
-                                        </ListItem>
+                                        </ListItemAvatar>
+                                        <ListItemText
+                                            primary={`${product.item?.name} - ${product.item?.price} ${product.item?.token}`}
+                                            secondary={`${product.quantity}x`}
+                                        />
+                                        {paymentInfo?.adjustableQuantity && 
+                                            <ListItemSecondaryAction>
+                                                <IconButton aria-label="plus" >
+                                                    <AddRoundedIcon />
+                                                </IconButton>
+                                                <IconButton aria-label="minus" >
+                                                    <RemoveRoundedIcon />
+                                                </IconButton>
+                                            </ListItemSecondaryAction>
+                                        }
+                                    </ListItem>
+                                    
 
-                                    ))}
-                                </List>
-                            </Grid>
+                                ))}
+                            </List>
+                        </Grid>
                     </Grid>
                 </CardContent>
                 <Divider />
