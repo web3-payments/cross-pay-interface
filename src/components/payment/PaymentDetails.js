@@ -16,7 +16,7 @@ import {
     Divider,
     Grid,
     Typography,
-    IconButton, TextField,
+    IconButton, TextField, FormControl, InputLabel, Select, MenuItem,
     List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction
 } from '@mui/material';
 
@@ -72,6 +72,13 @@ const PaymentDetails = ({paymentInfo, mock}) => {
         await axios.post(`${config.contextRoot}/payment/${paymentInfo.hash}/confirmation`, paymentConfirmation);
     }
 
+    const isCustomerRequiredInfo = (customerRequiredInfo) => {
+        return customerRequiredInfo?.name || 
+            customerRequiredInfo?.email ||
+            customerRequiredInfo?.phoneNumber ||
+            customerRequiredInfo?.shippingAddress;
+    }
+
     return (
         <Box
             lg={8} md={6} xs={12}
@@ -87,60 +94,13 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                 <Divider />
                 <CardContent>
                     <Grid container spacing={3}>
-                        <Grid item md={12} xs={24}>
-                            <Typography color="inherit" variant="h5">
-                                {paymentInfo?.companyName}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} lg={12}>
-                            {paymentInfo?.customerRequiredInfo && (paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
-                                <Grid container xs={24} lg={12}>  
-                                    <Grid item xs={24} lg={12}>              
-                                    <Typography sx={{ m: 1 }} variant="h6">
-                                        Contact Information
-                                    </Typography>
-                                    </Grid>
-                                    {paymentInfo?.customerRequiredInfo.name && 
-                                    
-                                    <Grid item md={12} xs={12}>
-                                        <TextField
-                                            id="outlined-number"
-                                            label="Name"
-                                            type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
-                                        />
-                                    </Grid>
-                                    }
-                                    {paymentInfo?.customerRequiredInfo.email && 
-                                    
-                                    <Grid item md={12} xs={12}>
-                                        <TextField
-                                            id="outlined-number"
-                                            label="Email"
-                                            type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
-                                        />
-                                    </Grid>
-                                    }
-                                    {paymentInfo?.customerRequiredInfo.phoneNumber && 
-                                    
-                                    
-                                    <Grid item md={12} xs={12}>
-                                        <TextField
-                                            id="outlined-number"
-                                            label="Phone number"
-                                            type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
-                                        />
-                                    </Grid>
-                                    }
-                                </Grid>
-                            }
-                        </Grid>
-                        <Grid item md={12} xs={12}>
+                        <Grid container sx={{ flex: '1 1 auto' }}>
+                        <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 6 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                            <Grid item md={12} xs={12}>
+                                <Typography sx={{ m: 1 }} color="inherit" variant="h4">
+                                    {paymentInfo?.companyName}
+                                </Typography>
+                            </Grid>
                             <List dense={true}>
                                 {paymentInfo?.products.length > 0 && 
                                     paymentInfo?.products.map((product) => (
@@ -168,11 +128,140 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                         }
                                     </ListItem>
                                     
-
+                                            
                                 ))}
                             </List>
+                            <Divider/>
+                            {paymentInfo?.amount &&
+                                <Grid item xs={12} lg={12}  >              
+                                    <Typography sx={{ mt: 3, ml: '40%' }} variant="h6">
+                                        Total due: {paymentInfo?.amount} {paymentInfo?.currency}
+                                    </Typography>
+                                </Grid>
+                            }
                         </Grid>
+                        {isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo) && 
+                        <Grid item xs={12} lg={6} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                            {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
+                                <Grid container xs={12} lg={12} sx={{ m: 1 }}>  
+                                    <Grid item xs={12} lg={12}>              
+                                    <Typography sx={{ m: 1 }} variant="h6">
+                                        Contact Information
+                                    </Typography>
+                                    </Grid>
+                                    {paymentInfo?.customerRequiredInfo.name && 
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                            <FormControl  fullWidth>
+                                                <TextField
+                                                    id="outlined-number"
+                                                    label="Name"
+                                                    type="text"
+                                                    value={''}
+                                                    // onChange={handleSelectedQuantity}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                    }
+                                    {paymentInfo?.customerRequiredInfo.email &&  
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                            <FormControl  fullWidth>
+                                                <TextField
+                                                    id="outlined-number"
+                                                    label="Email"
+                                                    type="text"
+                                                    value={''}
+                                                    // onChange={handleSelectedQuantity}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                    }
+                                    {paymentInfo?.customerRequiredInfo.phoneNumber &&  
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                            <FormControl  fullWidth>
+                                                <TextField
+                                                    id="outlined-number"
+                                                    label="Phone number"
+                                                    type="text"
+                                                    value={''}
+                                                    // onChange={handleSelectedQuantity}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                    }
+                                </Grid>
+                            }
+                            {paymentInfo?.customerRequiredInfo.shippingAddress &&
+                                <Grid container xs={12} lg={12} sx={{ m: 1 }}>  
+                                    <Grid item xs={12} lg={12}>              
+                                        <Typography sx={{ m: 1 }} variant="h6">
+                                            Shipping Address
+                                        </Typography>
+                                    </Grid>
+                                    <Grid  xs={12} lg={12} item sx={{ m: 0.3 }}>    
+                                        <FormControl fullWidth >
+                                            <InputLabel id="select-country-code">Select Country</InputLabel>
+                                                <Select
+                                                    labelId="select-country-code"
+                                                    id="select-country-code"
+                                                    name="country"
+                                                    // value={paymentDetails?.creditAddress || ''}
+                                                    value={''}
+                                                    label="Country"
+                                                    // onChange={handleChange}
+                                                >
+                                                    {/* {wallets?.map((wallet) => ( */}
+                                                    <MenuItem key={1} value={"portugal"}>Portugal</MenuItem>
+                                                    {/* ))} */}
+                                                </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                        <FormControl fullWidth >
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Address Line 1"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item sx={{ m: 0.3 }}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="City"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                    <Grid item sx={{ m: 0.3 }}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Zip code"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                    <Grid item sx={{ m: 0.3 }}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="State"
+                                            type="text"
+                                            value={''}
+                                            // onChange={handleSelectedQuantity}
+                                        />
+                                    </Grid>
+                                </Grid>
+                            }
+                        </Grid> 
+                        }
+                    </Grid>     
                     </Grid>
+                    <Typography sx={{m: 3}} color="textSecondary" variant="body2" >
+                        Powered by CrossPay | Tems Privacy
+                    </Typography>
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>

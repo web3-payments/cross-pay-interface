@@ -53,6 +53,11 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
             alert(`Quantity is greater than ${selectedProduct.name} total supply!`);
             return;
         }
+        
+        if(selectedQuantity <= 0){
+            alert(`Invalid quantity`);
+            return;
+        }
         const product = {
             item: selectedProduct,
             quantity: selectedQuantity
@@ -126,7 +131,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                                 id="select-wallet-address"
                                                 name="creditAddress"
                                                 value={paymentDetails?.creditAddress || ''}
-                                                label="Age"
+                                                label="Credit Wallet"
                                                 onChange={handleChange}
                                             >
                                                 {wallets?.map((wallet) => (
