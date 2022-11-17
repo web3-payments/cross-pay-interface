@@ -99,7 +99,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const handleAdjustableQuantity = (event) => {
-        setPaymentDetails({ ...paymentDetails, "adjustableQuantity":  event.target.value });
+        setPaymentDetails({ ...paymentDetails, "adjustableQuantity":  event.target.checked });
     }
 
     const handleRequiredInfo = (event) => {

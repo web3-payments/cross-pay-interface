@@ -22,14 +22,25 @@ export const PaymentLinkCreation = (props) => {
 
   const handleClose = () => {
     props.setOpen(false);
+    setPaymentDetails(paymentDetailsDefault);
   };
-  const [paymentDetails, setPaymentDetails] = useState({
-    companyName: 'userData?.companyName',
+
+  const paymentDetailsDefault = {
+    companyName: '',
     amount: '',
     currency: 'ETH',
     paymentType: 'PAYMENT_LINK',
-    products: []
-  });
+    products: [], 
+    adjstableQuantity: false, 
+    customerRequiredInfo: {
+      name: false,
+      email: false, 
+      phoneNumber: false, 
+      shippingAddress: false
+    }
+  }
+
+  const [paymentDetails, setPaymentDetails] = useState(paymentDetailsDefault);
 
   useEffect(() => {
     if(paymentDetails.products === undefined || paymentDetails.products.length <= 0) {

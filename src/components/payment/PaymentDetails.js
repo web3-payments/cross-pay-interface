@@ -20,10 +20,16 @@ import {
     List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction
 } from '@mui/material';
 
-const PaymentDetails = ({paymentInfo, mock}) => {
+const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
     const pay = async () => {
         if(mock){
             return;
+        }
+        if(isCustomerRequiredInfo && isReadyToPay){
+            await updatePaymentInfo().catch(function (error) {
+                alert("error here")
+                throw error;
+            });
         }
         let provider, library, accounts, network, address;
         try {
@@ -68,6 +74,29 @@ const PaymentDetails = ({paymentInfo, mock}) => {
         }
     }
 
+    const updatePaymentInfo = async () => {
+        console.log(paymentInfo);
+        await axios
+        .patch(`${config.contextRoot}/payment/${paymentInfo.hash}`, paymentInfo)
+        .then(function (response) {
+          console.log(response);
+          if(response.status === 200){
+            console.log("Update")
+          }
+        }).catch(function (error) {
+            console.error(error)
+            throw error;
+        });
+    }
+
+    const handleCustomerInfo = (event) => {
+        setPaymentInfo({...paymentInfo, ["customerInfo"]: {...paymentInfo.customerInfo, [event.target.name]: event.target.value}})
+    }
+
+    const handleCustomerShippingInfo = (event) => {
+        setPaymentInfo({...paymentInfo, ["customerInfo"]: {...paymentInfo.customerInfo, ["shippingAddress"]:{...paymentInfo.customerInfo.shippingAddress, [event.target.name]: event.target.value}}})
+    }
+
     const callPaymentConfirmation = async (paymentConfirmation) => {
         await axios.post(`${config.contextRoot}/payment/${paymentInfo.hash}/confirmation`, paymentConfirmation);
     }
@@ -77,6 +106,43 @@ const PaymentDetails = ({paymentInfo, mock}) => {
             customerRequiredInfo?.email ||
             customerRequiredInfo?.phoneNumber ||
             customerRequiredInfo?.shippingAddress;
+    }
+
+    const isReadyToPay = () => {
+        if(isCustomerRequiredInfo){
+            if(paymentInfo?.customerRequiredInfo?.name && isNotFilled(paymentInfo?.customerInfo?.name)){
+                return false;
+            }
+            if(paymentInfo?.customerRequiredInfo?.email && isNotFilled(paymentInfo?.customerInfo?.email)){
+                return false;
+            }
+            if(paymentInfo?.customerRequiredInfo?.phoneNumber && isNotFilled(paymentInfo?.customerInfo?.phoneNumber)){
+                return false;
+            }
+            if(paymentInfo?.customerRequiredInfo?.shippingAddress 
+                    && (isNotFilled(paymentInfo?.customerInfo?.shippingAddress?.country)
+                    || isNotFilled(paymentInfo?.customerInfo?.shippingAddress?.address)
+                    || isNotFilled(paymentInfo?.customerInfo?.shippingAddress?.city)
+                    || isNotFilled(paymentInfo?.customerInfo?.shippingAddress?.zipCode)
+                    || isNotFilled(paymentInfo?.customerInfo?.shippingAddress?.state))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    const isNotFilled = (field) => {
+        return (field === "" || field === undefined || field === null);
+    }
+
+    const addQuantity = (product) => {
+        const currentAmount = paymentInfo.amount;
+        setPaymentInfo({...paymentInfo, ["amount"]: currentAmount + product.item.price});
+    }
+    
+    const removeQuantity = (product) => {
+        const currentAmount = paymentInfo.amount;
+        setPaymentInfo({...paymentInfo, ["amount"]: currentAmount - product.item.price});
     }
 
     return (
@@ -102,7 +168,7 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                 </Typography>
                             </Grid>
                             <List dense={true}>
-                                {paymentInfo?.products.length > 0 && 
+                                {paymentInfo?.products?.length > 0 && 
                                     paymentInfo?.products.map((product) => (
                                     <ListItem key={product.item.id} button>
                                         <ListItemAvatar>
@@ -118,10 +184,10 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                         />
                                         {paymentInfo?.adjustableQuantity && 
                                             <ListItemSecondaryAction>
-                                                <IconButton aria-label="plus" >
-                                                    <AddRoundedIcon />
+                                                <IconButton disabled={product.item?.quantity === 0} aria-label="plus" onClick={() => addQuantity(product)}>
+                                                    <AddRoundedIcon  />
                                                 </IconButton>
-                                                <IconButton aria-label="minus" >
+                                                <IconButton disabled={product.quantity === 1} aria-label="minus"  onClick={() => removeQuantity(product)}>
                                                     <RemoveRoundedIcon />
                                                 </IconButton>
                                             </ListItemSecondaryAction>
@@ -143,7 +209,7 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                         {isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo) && 
                         <Grid item xs={12} lg={6} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
                             {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
-                                <Grid container xs={12} lg={12} sx={{ m: 1 }}>  
+                                <Grid container sx={{ m: 1 }}>  
                                     <Grid item xs={12} lg={12}>              
                                     <Typography sx={{ m: 1 }} variant="h6">
                                         Contact Information
@@ -155,9 +221,10 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                                 <TextField
                                                     id="outlined-number"
                                                     label="Name"
+                                                    name="name"
                                                     type="text"
-                                                    value={''}
-                                                    // onChange={handleSelectedQuantity}
+                                                    value={paymentInfo?.customerInfo?.name || ''}
+                                                    onChange={handleCustomerInfo}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -168,9 +235,10 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                                 <TextField
                                                     id="outlined-number"
                                                     label="Email"
+                                                    name="email"
                                                     type="text"
-                                                    value={''}
-                                                    // onChange={handleSelectedQuantity}
+                                                    value={paymentInfo?.customerInfo?.email || ''}
+                                                    onChange={handleCustomerInfo}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -182,8 +250,9 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                                     id="outlined-number"
                                                     label="Phone number"
                                                     type="text"
-                                                    value={''}
-                                                    // onChange={handleSelectedQuantity}
+                                                    name="phoneNumber"
+                                                    value={paymentInfo?.customerInfo?.phoneNumber || ''}
+                                                    onChange={handleCustomerInfo}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -191,23 +260,22 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                 </Grid>
                             }
                             {paymentInfo?.customerRequiredInfo.shippingAddress &&
-                                <Grid container xs={12} lg={12} sx={{ m: 1 }}>  
+                                <Grid container sx={{ m: 1 }}>  
                                     <Grid item xs={12} lg={12}>              
                                         <Typography sx={{ m: 1 }} variant="h6">
                                             Shipping Address
                                         </Typography>
                                     </Grid>
-                                    <Grid  xs={12} lg={12} item sx={{ m: 0.3 }}>    
+                                    <Grid  item lg={12} sx={{ m: 0.3 }}>    
                                         <FormControl fullWidth >
                                             <InputLabel id="select-country-code">Select Country</InputLabel>
                                                 <Select
                                                     labelId="select-country-code"
                                                     id="select-country-code"
                                                     name="country"
-                                                    // value={paymentDetails?.creditAddress || ''}
-                                                    value={''}
                                                     label="Country"
-                                                    // onChange={handleChange}
+                                                    value={paymentInfo?.customerInfo?.shippingAddress?.country || ''}
+                                                    onChange={handleCustomerShippingInfo}
                                                 >
                                                     {/* {wallets?.map((wallet) => ( */}
                                                     <MenuItem key={1} value={"portugal"}>Portugal</MenuItem>
@@ -221,8 +289,9 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                             id="outlined-number"
                                             label="Address Line 1"
                                             type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
+                                            name="address"
+                                            value={paymentInfo?.customerInfo?.shippingAddress?.address || ''}
+                                            onChange={handleCustomerShippingInfo}
                                         />
                                         </FormControl>
                                     </Grid>
@@ -231,8 +300,9 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                             id="outlined-number"
                                             label="City"
                                             type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
+                                            name="city"
+                                            value={paymentInfo?.customerInfo?.shippingAddress?.city || ''}
+                                            onChange={handleCustomerShippingInfo}
                                         />
                                     </Grid>
                                     <Grid item sx={{ m: 0.3 }}>
@@ -240,8 +310,9 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                             id="outlined-number"
                                             label="Zip code"
                                             type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
+                                            name="zipCode"
+                                            value={paymentInfo?.customerInfo?.shippingAddress?.zipCode || ''}
+                                            onChange={handleCustomerShippingInfo}
                                         />
                                     </Grid>
                                     <Grid item sx={{ m: 0.3 }}>
@@ -249,8 +320,9 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                                             id="outlined-number"
                                             label="State"
                                             type="text"
-                                            value={''}
-                                            // onChange={handleSelectedQuantity}
+                                            name="state"
+                                            value={paymentInfo?.customerInfo?.shippingAddress?.state || ''}
+                                            onChange={handleCustomerShippingInfo}
                                         />
                                     </Grid>
                                 </Grid>
@@ -265,7 +337,7 @@ const PaymentDetails = ({paymentInfo, mock}) => {
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
-                    <Button color="primary" variant="contained" onClick={pay}>
+                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay()}>
                         Pay {paymentInfo?.amount} {paymentInfo?.currency}
                     </Button>
                 </Box>

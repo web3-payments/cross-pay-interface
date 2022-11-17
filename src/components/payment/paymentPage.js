@@ -25,14 +25,16 @@ import PaymentDetails from './PaymentDetails';
 const PaymentPage = (props) => {
   const { paymentHash } = useParams()
   
-  const { data: paymentInfo } = useQuery(
+  useQuery(
     ["getPaymentInfo", paymentHash], 
     async () => 
       await axios
         .get(`${config.contextRoot}/payment/${paymentHash}`)
-        .then((res) => res.data),
+        .then((res) => setPaymentInfo(res.data)),
         {refetchOnWindowFocus: false}
   );
+
+  const [paymentInfo, setPaymentInfo] = useState({});
   
   return (
     <React.Fragment>
@@ -62,7 +64,7 @@ const PaymentPage = (props) => {
       <Box  component="main" sx={{ flexGrow: 1, py: 1 }}>
       <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
         <Grid item lg={5}>
-          <PaymentDetails paymentInfo={paymentInfo}/>
+          <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo}/>
         </Grid>
       </Grid>
       </Box>
