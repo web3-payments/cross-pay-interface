@@ -21,6 +21,8 @@ import {
 } from '@mui/material';
 
 const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
+    const toWei = (num) => ethers.utils.parseEther(num.toString())
+    const fromWei = (num) => ethers.utils.formatEther(num)
     const pay = async () => {
         if(mock){
             return;
@@ -140,7 +142,10 @@ const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply--;
         paymentInfo.products[index].quantity++;
-        setPaymentInfo({...paymentInfo, ["amount"]: Number(currentAmount) + Number(product.item.price)});
+        //TODO: this must be changed - when implemented new types of coins
+        const totalAmount = toWei(currentAmount).add(toWei(product.item.price));
+        console.log(totalAmount);
+        setPaymentInfo({...paymentInfo, ["amount"]: fromWei(totalAmount)});
     }
     
     const removeQuantity = (product) => {
@@ -148,8 +153,9 @@ const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply++;
         paymentInfo.products[index].quantity--;
-        const newAmount = Number(currentAmount) - Number(product.item.price);
-        setPaymentInfo({...paymentInfo, ["amount"]: newAmount});
+        //TODO: this must be changed - when implemented new types of coins
+        const totalAmount = toWei(currentAmount).sub(toWei(product.item.price));
+        setPaymentInfo({...paymentInfo, ["amount"]: fromWei(totalAmount)});
     }
 
     return (

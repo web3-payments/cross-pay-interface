@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { ethers } from "ethers";
 import { useSelector } from 'react-redux';
 import { useQuery } from 'react-query';
 import { config } from "../../../config";
@@ -11,6 +12,8 @@ import DialogContent from '@mui/material/DialogContent';
 import PaymentModal from './payment-modal';
 
 export const PaymentLinkCreation = (props) => {
+  const toWei = (num) => ethers.utils.parseEther(num.toString())
+  const fromWei = (num) => ethers.utils.formatEther(num)
   const userAddress = useSelector((state) => state.address);
   useQuery(["getUserData"], 
     async() => 
@@ -48,9 +51,10 @@ export const PaymentLinkCreation = (props) => {
       return;
     }
     const totalAmount = paymentDetails.products.reduce((accumulator, value) => {
-      return accumulator + (value.item.price * value.quantity);
+      //TODO: this must be changed - when implemented new types of coins
+      return accumulator + (toWei(value.item.price) * value.quantity);
     }, 0 )
-     setPaymentDetails({ ...paymentDetails, ["amount"]: totalAmount });
+     setPaymentDetails({ ...paymentDetails, ["amount"]: fromWei(totalAmount) });
   }, [JSON.stringify(paymentDetails.products)])
 
   const createLink = async () => {
