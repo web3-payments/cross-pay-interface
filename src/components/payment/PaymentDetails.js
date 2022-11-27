@@ -1,6 +1,7 @@
 import React from 'react'
 import { Contract, ethers } from "ethers";
 import * as PaymentContract from "../../abis/payment/PaymentContract.json";
+import * as ERC20 from "../../abis/ERC20/ERC20.json";
 import { config } from "../../config";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereumWalletProvider";
@@ -21,8 +22,9 @@ import {
 } from '@mui/material';
 
 const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
-    const toWei = (num) => ethers.utils.parseEther(num.toString())
-    const fromWei = (num) => ethers.utils.formatEther(num)
+    const USDCtoWei = (num) =>  (num * (10 ** (18-6))).toString();
+    const toWei = (num) => ethers.utils.parseEther(num.toString());
+    const fromWei = (num) => ethers.utils.formatEther(num);
     const pay = async () => {
         if(mock){
             return;
@@ -45,36 +47,78 @@ const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
         }
         if (accounts) {  
             address = accounts[0];
-        
             const signer = await library.getSigner(address)
             console.log(signer);
             // TODO: Create a util class to handle smart contract operations // paymentExecution 
             const paymentContract = new Contract(
-                "0x43105B041E6061A592A9763Af56447a51709932A", //TODO: move to a consts class
+                "0x294eb269DD01e2700dB044F9fA9bF86dBf71aB45", //TODO: move to a consts class
                 PaymentContract.abi, 
                 signer
               );
             console.log(paymentContract);
             console.log(paymentInfo.creditAddress);
-            const transaction = await paymentContract.pay(paymentInfo.creditAddress, {value: ethers.utils.parseEther(paymentInfo.amount.toString())}); // use the amount from the paymentInfo
-            console.log(`Transaction Hash: ${transaction.hash}`)
-            const result = await transaction.wait();
-            console.log(result);
-            console.log("PAID");
-            const paymentConfirmation = {
-                transactionHash: transaction.hash,
-                blockHash: result.blockHash,
-                blockNumber: result.blockNumber,
-                gasUsed: result.gasUsed.toString(),
-                toAddress: result.to,
-                fromAddress: result.from,
-                confirmations: result.confirmations
-
+            let paymentConfirmation;
+            console.log(paymentInfo.cryptocurrency)
+            if(paymentInfo.cryptocurrency.nativeToken){
+                paymentConfirmation = await paymentNativeToken(paymentContract, paymentInfo);
+            } else {
+                paymentConfirmation = await paymentERC20(paymentContract, paymentInfo, signer);
             }
+            
             await callPaymentConfirmation(paymentConfirmation);
             console.log("payment confirmed");
         }
     }
+
+    
+
+async function paymentNativeToken(paymentContract, paymentInfo) {
+    const transaction = await paymentContract.pay(paymentInfo.creditAddress, { value: ethers.utils.parseEther(paymentInfo.amount.toString()) }); // use the amount from the paymentInfo
+    console.log(`Transaction Hash: ${transaction.hash}`);
+    const result = await transaction.wait();
+    console.log(result);
+    console.log("PAID");
+    const paymentConfirmation = {
+        transactionHash: transaction.hash,
+        blockHash: result.blockHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed.toString(),
+        toAddress: result.to,
+        fromAddress: result.from,
+        confirmations: result.confirmations
+    };
+    return paymentConfirmation;
+}
+
+async function paymentERC20(paymentContract, paymentInfo, signer) {
+    // TODO: Create a util class to handle smart contract operations // paymentExecution 
+    const ERC20Contract = new Contract(
+        "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", //TODO: move to a consts class
+        ERC20.abi, 
+        signer
+    );
+    const approvalTransaction = await ERC20Contract.approve("0x294eb269DD01e2700dB044F9fA9bF86dBf71aB45", 
+       100000000000000 ); //TODO: move to a consts class
+    console.log(`Transaction Hash: ${approvalTransaction.hash}`);
+    const approvalResult = await approvalTransaction.wait();
+    console.log(approvalResult);
+    const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", USDCtoWei(paymentInfo.amount)); // use the amount from the paymentInfo
+    console.log(`Transaction Hash: ${transaction.hash}`);
+    const result = await transaction.wait();
+    console.log(result);
+    console.log("PAID");
+    const paymentConfirmation = {
+        transactionHash: transaction.hash,
+        blockHash: result.blockHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed.toString(),
+        toAddress: result.to,
+        fromAddress: result.from,
+        confirmations: result.confirmations
+    };
+    return paymentConfirmation;
+}
+
 
     const updatePaymentInfo = async () => {
         console.log(paymentInfo);
@@ -169,7 +213,7 @@ const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
             width={`${mock ? '70%' : '100%'} `}
         >
             <Card>
-                <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.currency}/>
+                <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/>
                 <Divider />
                 <CardContent>
                     <Grid container spacing={3}>
@@ -192,7 +236,7 @@ const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
                                             />
                                         </ListItemAvatar>
                                         <ListItemText
-                                            primary={`${product.item?.name} - ${product.item?.price} ${product.item?.token}`}
+                                            primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
                                             secondary={`${product.quantity}x`}
                                         />
                                         {paymentInfo?.adjustableQuantity && 

@@ -23,7 +23,7 @@ export const ProductCard = ({ product }) => (
         <Grid item sx={{ alignItems: 'center', display: 'flex' }}>
           <SellOutlinedIcon/>
           <Typography color="textSecondary" display="inline" sx={{ pl: 1 }} variant="body2">
-            {`${product?.price} ${product?.token}`}
+            {`${product?.price} ${product?.cryptocurrency.symbol}`}
           </Typography>
         </Grid>
         <Grid item sx={{ alignItems: 'center', display: 'flex' }}>
@@ -36,7 +36,3 @@ export const ProductCard = ({ product }) => (
     </Box>
   </Card>
 );
-
-ProductCard.propTypes = {
-  product: PropTypes.object.isRequired
-};

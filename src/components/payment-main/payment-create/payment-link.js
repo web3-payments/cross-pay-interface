@@ -13,7 +13,7 @@ import PaymentModal from './payment-modal';
 
 export const PaymentLinkCreation = (props) => {
   const toWei = (num) => ethers.utils.parseEther(num.toString())
-  const fromWei = (num) => ethers.utils.formatEther(num)
+  const fromWei = (num) => ethers.utils.formatEther(num.toString())
   const userAddress = useSelector((state) => state.address);
   useQuery(["getUserData"], 
     async() => 
@@ -31,7 +31,6 @@ export const PaymentLinkCreation = (props) => {
   const paymentDetailsDefault = {
     companyName: '',
     amount: '',
-    currency: 'ETH',
     paymentType: 'PAYMENT_LINK',
     products: [], 
     adjstableQuantity: false, 

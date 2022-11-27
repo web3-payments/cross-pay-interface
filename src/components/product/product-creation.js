@@ -13,6 +13,7 @@ const ProductCreation = (props) => {
     const userAddress = useSelector((state) => state.address);
   
     const handleClose = () => {
+      setFile();
       props.setOpen(false);
     }; 
     const [productDetails, setProductDetails] = useState({
@@ -29,7 +30,6 @@ const ProductCreation = (props) => {
         } else {
           await createProduct(productDetails, userAddress)
         }
-        setProductDetails({token: "ETH"}) //TODO: remove this is the future
         handleClose();
       }
 
@@ -57,7 +57,7 @@ async function createProductWithImage(productDetails, file, userAddress) {
   formData.append('price', productDetails.price);
   formData.append('description', productDetails.description);
   formData.append('totalSupply', productDetails.totalSupply);
-  formData.append('token', productDetails.token);
+  formData.append('cryptocurrencyId', productDetails.cryptocurrency.id);
   formData.append('image', file[0]);
   await axios
     .post(`${config.contextRoot}/user/${userAddress}/product`, formData,

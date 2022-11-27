@@ -1,12 +1,27 @@
-
-import { Box, Grid, Card, CardContent, CardHeader, TextField, Divider} from '@mui/material';
+import { Box, Grid, Card, CardContent, CardHeader, TextField, Divider, MenuItem, Select, FormControl, InputLabel} from '@mui/material';
 import FileUpload from 'react-material-file-upload';
+import { useState } from 'react';
+import { useQuery } from 'react-query';
+import { config } from "../../config";
+import axios from "axios";
 
 const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
 
     const handleChange = (event) => {
+        console.log(event.target.name);
+        console.log(event.target.value);
         setProductDetails({ ...productDetails, [event.target.name]: event.target.value });
     };
+
+    const [supportedCryptocurrencies, setSupportedCryptocurrencies] = useState();
+
+    useQuery(["getSupportedCryptos"],
+        async () =>
+            await axios
+                .get(`${config.contextRoot}/cryptocurrency`)
+                .then((res) => setSupportedCryptocurrencies(res.data)),
+        { refetchOnWindowFocus: false }
+    );
 
     return (
         <Box component="main" sx={{ display: 'flex', flex: '1 1 auto' }}>
@@ -71,14 +86,21 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
                                 />
                             </Grid>
                             <Grid item md={4} xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Currency"
-                                    name="currency"
-                                    onChange={handleChange}
-                                    value={productDetails?.token || ''}
-                                    variant="outlined"
-                                />
+                                <FormControl fullWidth >
+                                        <InputLabel id="select-crypto">Crytocurrency</InputLabel>
+                                            <Select
+                                                labelId="select-crypto"
+                                                id="select-crypto"
+                                                name="cryptocurrency"
+                                                value={productDetails?.cryptocurrency || ''}
+                                                label="Crytocurrency"
+                                                onChange={handleChange}
+                                            >
+                                                {supportedCryptocurrencies?.map((crypto) => (
+                                                    <MenuItem key={crypto.id} value={crypto}>{crypto.symbol}</MenuItem>
+                                                ))}
+                                            </Select>
+                                    </FormControl>
                             </Grid>
                         </Grid>
                     </CardContent>

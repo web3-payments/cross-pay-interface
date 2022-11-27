@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-    Avatar , Box, Button, Select, Card, CardContent, CardHeader, Checkbox, Grid, MenuItem , InputLabel, TextField, 
+    Avatar , Box, Button, Select, Card, CardContent, CardHeader, Checkbox, Grid, MenuItem, InputLabel, TextField, 
     FormControl, Divider, IconButton, List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction, FormControlLabel,
     Typography
     } from '@mui/material';
@@ -53,10 +53,12 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
             alert(`Quantity is greater than ${selectedProduct.name} total supply!`);
             return;
         }
-        
         if(selectedQuantity <= 0){
             alert(`Invalid quantity`);
             return;
+        }
+        if(paymentDetails.products.length === 0){
+            paymentDetails.cryptocurrency = selectedProduct.cryptocurrency;
         }
         const product = {
             item: selectedProduct,
@@ -75,7 +77,11 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     const removeProduct = (id) => {
         const index = findPaymentDetailsProductsIndex(id);
         increaseSupply(id, paymentDetails.products[index].quantity);
-        setPaymentDetails({ ...paymentDetails, "products": paymentDetails.products.filter((value, index) => value.item.id !== id) });
+        const products = paymentDetails.products.filter((value, index) => value.item.id !== id)
+        if(products.length === 0){
+            paymentDetails.cryptocurrency = undefined;
+        }
+        setPaymentDetails({ ...paymentDetails, "products":  products});
     }
 
     const increaseSupply = (id, qtd) => {
@@ -150,9 +156,14 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                                 label="Product"
                                                 onChange={handleProductChange}
                                             >
-                                                {products?.map((product) => (
-                                                    <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
-                                                ))}
+                                                {paymentDetails.cryptocurrency ? 
+                                                    products?.filter(prd => prd.cryptocurrency === paymentDetails.cryptocurrency).map((product) => (
+                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                    )) : 
+                                                    products?.map((product) => (
+                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                    ))
+                                                }
                                             </Select>
                                     </FormControl>
                                 </Grid>
@@ -196,7 +207,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                                 />
                                             </ListItemAvatar>
                                             <ListItemText
-                                                primary={`${product.item?.name} - ${product.item?.price} ${product.item?.token}`}
+                                                primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
                                                 secondary={`${product.quantity}x`}
                                             />
                                             <ListItemSecondaryAction>
@@ -221,7 +232,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                     <FormControlLabel control={<Checkbox name="shippingAddress" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Shipping Address" />
                                     <FormControlLabel control={<Checkbox sx={{ marginLeft: '10px'}} onClick={()=> alert('not implemented yet.')}/>} label="Additional Information" />
                                 </Grid>
-                                <Grid item md={6} xs={12}>
+                                {/* <Grid item md={6} xs={12}>
                                     <TextField
                                         disabled={paymentDetails.products.length > 0}
                                         fullWidth
@@ -242,7 +253,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                         value={paymentDetails?.currency || ''}
                                         variant="outlined"
                                     />
-                                </Grid>
+                                </Grid> */}
                             </Grid>
                         </CardContent>
                     </Card>

@@ -102,7 +102,7 @@ export const PaymentListResults = ({ payments}) => {
                   selected={selectedCustomerIds.indexOf(payment.id) !== -1}
                 >
                   <TableCell>
-                    {`${payment.amount} - ${payment.currency}`}
+                    {`${payment.amount} - ${payment.cryptocurrency.symbol}`}
                   </TableCell>
                   <TableCell>
                     {paymentStatusTag(payment.paymentStatus)}
