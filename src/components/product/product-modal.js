@@ -8,8 +8,6 @@ import axios from "axios";
 const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
 
     const handleChange = (event) => {
-        console.log(event.target.name);
-        console.log(event.target.value);
         setProductDetails({ ...productDetails, [event.target.name]: event.target.value });
     };
 

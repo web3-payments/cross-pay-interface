@@ -213,7 +213,10 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
             width={`${mock ? '70%' : '100%'} `}
         >
             <Card>
-                <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/>
+                <Box sx={{m: 2}} >
+                    <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
+                </Box>
+                {/* <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/> */}
                 <Divider />
                 <CardContent>
                     <Grid container spacing={3}>
@@ -221,7 +224,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                         <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 6 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
                             <Grid item md={12} xs={12}>
                                 <Typography sx={{ m: 1 }} color="inherit" variant="h4">
-                                    {paymentInfo?.companyName}
+                                    {paymentInfo?.user?.companyName}
                                 </Typography>
                             </Grid>
                             <List dense={true}>

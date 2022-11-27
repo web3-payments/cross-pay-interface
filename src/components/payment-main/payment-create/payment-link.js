@@ -19,7 +19,7 @@ export const PaymentLinkCreation = (props) => {
     async() => 
       await axios 
         .get(`${config.contextRoot}/user/${userAddress}`)
-        .then((res) => setPaymentDetails({...paymentDetails, ["companyName"]: res.data.companyName}) ), 
+        .then((res) => setPaymentDetails({...paymentDetails, ["user"]: res.data}) ), 
         { refetchOnWindowFocus: false}
     );
 
