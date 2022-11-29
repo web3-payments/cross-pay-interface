@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 
 const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
-    const USDCtoWei = (num) =>  (num * (10 ** (18-6))).toString();
+    const USDCtoWei = (num) =>  (num * (10 ** (6))).toString();
     const toWei = (num) => ethers.utils.parseEther(num.toString());
     const fromWei = (num) => ethers.utils.formatEther(num);
     const pay = async () => {
@@ -409,7 +409,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
                     <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay()}>
-                        Pay {paymentInfo?.amount} {paymentInfo?.currency}
+                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                     </Button>
                 </Box>
             </Card>
