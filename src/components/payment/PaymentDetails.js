@@ -140,6 +140,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
     }
 
     const handleCustomerShippingInfo = (event) => {
+        if(paymentInfo.customerInfo === undefined){
+            paymentInfo.customerInfo = {};
+        }
         setPaymentInfo({...paymentInfo, ["customerInfo"]: {...paymentInfo.customerInfo, ["shippingAddress"]:{...paymentInfo.customerInfo.shippingAddress, [event.target.name]: event.target.value}}})
     }
 
@@ -283,6 +286,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                     label="Name"
                                                     name="name"
                                                     type="text"
+                                                    disabled={mock}
                                                     value={paymentInfo?.customerInfo?.name || ''}
                                                     onChange={handleCustomerInfo}
                                                 />
@@ -297,6 +301,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                     label="Email"
                                                     name="email"
                                                     type="text"
+                                                    disabled={mock}
                                                     value={paymentInfo?.customerInfo?.email || ''}
                                                     onChange={handleCustomerInfo}
                                                 />
@@ -311,6 +316,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                     label="Phone number"
                                                     type="text"
                                                     name="phoneNumber"
+                                                    disabled={mock}
                                                     value={paymentInfo?.customerInfo?.phoneNumber || ''}
                                                     onChange={handleCustomerInfo}
                                                 />
@@ -334,6 +340,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                     id="select-country-code"
                                                     name="country"
                                                     label="Country"
+                                                    disabled={mock}
                                                     value={paymentInfo?.customerInfo?.shippingAddress?.country || ''}
                                                     onChange={handleCustomerShippingInfo}
                                                 >
@@ -350,6 +357,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             label="Address Line 1"
                                             type="text"
                                             name="address"
+                                            disabled={mock}
                                             value={paymentInfo?.customerInfo?.shippingAddress?.address || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
@@ -361,6 +369,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             label="City"
                                             type="text"
                                             name="city"
+                                            disabled={mock}
                                             value={paymentInfo?.customerInfo?.shippingAddress?.city || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
@@ -371,6 +380,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             label="Zip code"
                                             type="text"
                                             name="zipCode"
+                                            disabled={mock}
                                             value={paymentInfo?.customerInfo?.shippingAddress?.zipCode || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
@@ -381,6 +391,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             label="State"
                                             type="text"
                                             name="state"
+                                            disabled={mock}
                                             value={paymentInfo?.customerInfo?.shippingAddress?.state || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
