@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { 
-    Avatar , Box, Button, Select, Card, CardContent, CardHeader, Checkbox, Grid, MenuItem, InputLabel, TextField, 
-    FormControl, Divider, IconButton, List, ListItem,  ListItemAvatar, ListItemText, ListItemSecondaryAction, FormControlLabel,
+import {
+    Avatar, Box, Button, Select, Card, CardContent, CardHeader, Checkbox, Grid, MenuItem, InputLabel, TextField,
+    FormControl, Divider, IconButton, List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction, FormControlLabel,
     Typography
-    } from '@mui/material';
+} from '@mui/material';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import PaymentDetails from '../../payment/PaymentDetails';
 import { useSelector } from 'react-redux';
@@ -22,15 +22,15 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                 .then((res) => setUserWallets(res.data)),
         { refetchOnWindowFocus: false }
     );
-    
+
     const [products, setProducts] = useState([]);
-    useQuery(["getProducts"], 
-        async() => 
-        await axios 
-            .get(`${config.contextRoot}/user/${userAddress}/product`)
-            .then((res) => setProducts(res.data)), 
-            { refetchOnWindowFocus: false}
-        );
+    useQuery(["getProducts"],
+        async () =>
+            await axios
+                .get(`${config.contextRoot}/user/${userAddress}/product`)
+                .then((res) => setProducts(res.data)),
+        { refetchOnWindowFocus: false }
+    );
 
     const handleChange = (event) => {
         setPaymentDetails({ ...paymentDetails, [event.target.name]: event.target.value });
@@ -49,22 +49,22 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const addProduct = () => {
-        if(selectedQuantity > selectedProduct.totalSupply){
+        if (selectedQuantity > selectedProduct.totalSupply) {
             alert(`Quantity is greater than ${selectedProduct.name} total supply!`);
             return;
         }
-        if(selectedQuantity <= 0){
+        if (selectedQuantity <= 0) {
             alert(`Invalid quantity`);
             return;
         }
-        if(paymentDetails.products.length === 0){
+        if (paymentDetails.products.length === 0) {
             paymentDetails.cryptocurrency = selectedProduct.cryptocurrency;
         }
         const product = {
             item: selectedProduct,
             quantity: selectedQuantity
         }
-        if(paymentDetails.products.filter((value, index) => value.item.id === selectedProduct.id).length > 0){
+        if (paymentDetails.products.filter((value, index) => value.item.id === selectedProduct.id).length > 0) {
             const index = findPaymentDetailsProductsIndex(selectedProduct.id);
             paymentDetails.products[index].quantity = Number(selectedQuantity) + Number(paymentDetails.products[index].quantity);
             setPaymentDetails({ ...paymentDetails, "products": paymentDetails.products });
@@ -78,10 +78,10 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
         const index = findPaymentDetailsProductsIndex(id);
         increaseSupply(id, paymentDetails.products[index].quantity);
         const products = paymentDetails.products.filter((value, index) => value.item.id !== id)
-        if(products.length === 0){
+        if (products.length === 0) {
             paymentDetails.cryptocurrency = undefined;
         }
-        setPaymentDetails({ ...paymentDetails, "products":  products});
+        setPaymentDetails({ ...paymentDetails, "products": products });
     }
 
     const increaseSupply = (id, qtd) => {
@@ -105,11 +105,11 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const handleAdjustableQuantity = (event) => {
-        setPaymentDetails({ ...paymentDetails, "adjustableQuantity":  event.target.checked });
+        setPaymentDetails({ ...paymentDetails, "adjustableQuantity": event.target.checked });
     }
 
     const handleRequiredInfo = (event) => {
-        setPaymentDetails({...paymentDetails, ["customerRequiredInfo"]: {...paymentDetails.customerRequiredInfo, [event.target.name]: event.target.checked}})
+        setPaymentDetails({ ...paymentDetails, ["customerRequiredInfo"]: { ...paymentDetails.customerRequiredInfo, [event.target.name]: event.target.checked } })
     }
 
     return (
@@ -118,7 +118,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                 <Grid item xs={12} lg={6} sx={{ backgroundColor: 'neutral.50', display: 'flex', flexDirection: 'column', position: 'relative' }} >
                     <Box>
                         <a href="/">
-                            <Avatar src="/static/cpay_wallet_logo.jpg" sx={{ height: 64, mb: 2, width: 64 }}/>
+                            <Avatar src="/static/cpay_wallet_logo.jpg" sx={{ height: 64, mb: 2, width: 64 }} />
                         </a>
                     </Box>
                     <Card sx={{ boxShadow: 'none' }}>
@@ -132,39 +132,39 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                 <Grid item md={12} xs={12}>
                                     <FormControl fullWidth >
                                         <InputLabel id="select-wallet-address">Credit Wallet</InputLabel>
-                                            <Select
-                                                labelId="select-wallet-address"
-                                                id="select-wallet-address"
-                                                name="creditAddress"
-                                                value={paymentDetails?.creditAddress || ''}
-                                                label="Credit Wallet"
-                                                onChange={handleChange}
-                                            >
-                                                {wallets?.map((wallet) => (
-                                                    <MenuItem key={wallet.address} value={wallet.address}>{wallet.name}</MenuItem>
-                                                ))}
-                                            </Select>
+                                        <Select
+                                            labelId="select-wallet-address"
+                                            id="select-wallet-address"
+                                            name="creditAddress"
+                                            value={paymentDetails?.creditAddress || ''}
+                                            label="Credit Wallet"
+                                            onChange={handleChange}
+                                        >
+                                            {wallets?.map((wallet) => (
+                                                <MenuItem key={wallet.address} value={wallet.address}>{wallet.name}</MenuItem>
+                                            ))}
+                                        </Select>
                                     </FormControl>
                                 </Grid>
                                 <Grid item md={7} xs={12}>
                                     <FormControl fullWidth >
                                         <InputLabel id="select-product">Product</InputLabel>
-                                            <Select
-                                                labelId="select-product"
-                                                id="select-product"
-                                                value={selectedProduct || ''}
-                                                label="Product"
-                                                onChange={handleProductChange}
-                                            >
-                                                {paymentDetails.cryptocurrency ? 
-                                                    products?.filter(prd => prd.cryptocurrency === paymentDetails.cryptocurrency).map((product) => (
-                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
-                                                    )) : 
-                                                    products?.map((product) => (
-                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
-                                                    ))
-                                                }
-                                            </Select>
+                                        <Select
+                                            labelId="select-product"
+                                            id="select-product"
+                                            value={selectedProduct || ''}
+                                            label="Product"
+                                            onChange={handleProductChange}
+                                        >
+                                            {paymentDetails.cryptocurrency ?
+                                                products?.filter(prd => prd.cryptocurrency === paymentDetails.cryptocurrency).map((product) => (
+                                                    <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                )) :
+                                                products?.map((product) => (
+                                                    <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                ))
+                                            }
+                                        </Select>
                                     </FormControl>
                                 </Grid>
                                 <Grid item md={3} xs={12}>
@@ -175,62 +175,62 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                         value={selectedQuantity || ''}
                                         onChange={handleSelectedQuantity}
                                         InputLabelProps={{
-                                          shrink: true,
+                                            shrink: true,
                                         }}
                                     />
                                 </Grid>
-                                <Grid item md={2} xs={12} sx={{ marginTop: '10px'}}>
+                                <Grid item md={2} xs={12} sx={{ marginTop: '10px' }}>
                                     <Button color="success" variant="contained" onClick={addProduct}>Add</Button>
                                 </Grid>
                                 <Grid item md={12} xs={12}>
-                                    <FormControlLabel 
+                                    <FormControlLabel
                                         label="Let customer adjust quantity"
                                         control={
-                                            <Checkbox 
-                                                sx={{ marginLeft: '10px'}}
+                                            <Checkbox
+                                                sx={{ marginLeft: '10px' }}
                                                 onClick={handleAdjustableQuantity}
                                                 value={paymentDetails?.adjustableQuantity | false}
                                                 disabled={paymentDetails.products.length <= 0} />
-                                            } 
+                                        }
                                     />
                                 </Grid>
                                 <Grid item md={12} xs={12}>
                                     <List dense={true}>
-                                    {paymentDetails.products.length > 0 && 
-                                        paymentDetails.products.map((product) => (
-                                        <ListItem key={product.item.id} button>
-                                            <ListItemAvatar>
-                                                <Avatar
-                                                    alt={product.item?.name}
-                                                    src={`data:image/jpeg;base64,${product.item?.image}`}
-                                                    variant="square"
-                                                />
-                                            </ListItemAvatar>
-                                            <ListItemText
-                                                primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
-                                                secondary={`${product.quantity}x`}
-                                            />
-                                            <ListItemSecondaryAction>
-                                            <IconButton aria-label="delete" onClick={() => removeProduct(product?.item?.id)}>
-                                                <DeleteOutlineOutlinedIcon />
-                                            </IconButton>
-                                            </ListItemSecondaryAction>
-                                        </ListItem>
+                                        {paymentDetails.products.length > 0 &&
+                                            paymentDetails.products.map((product) => (
+                                                <ListItem key={product.item.id} button>
+                                                    <ListItemAvatar>
+                                                        <Avatar
+                                                            alt={product.item?.name}
+                                                            src={`data:image/jpeg;base64,${product.item?.image}`}
+                                                            variant="square"
+                                                        />
+                                                    </ListItemAvatar>
+                                                    <ListItemText
+                                                        primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
+                                                        secondary={`${product.quantity}x`}
+                                                    />
+                                                    <ListItemSecondaryAction>
+                                                        <IconButton aria-label="delete" onClick={() => removeProduct(product?.item?.id)}>
+                                                            <DeleteOutlineOutlinedIcon />
+                                                        </IconButton>
+                                                    </ListItemSecondaryAction>
+                                                </ListItem>
 
-                                    ))}
+                                            ))}
                                     </List>
                                 </Grid>
-                                <Grid item md={12} xs={12}>                    
+                                <Grid item md={12} xs={12}>
                                     <Typography sx={{ m: 1 }} variant="h6">
                                         Customer Details Required
                                     </Typography>
                                 </Grid>
                                 <Grid item md={12} xs={12}>
-                                    <FormControlLabel control={<Checkbox name="name" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Name" />
-                                    <FormControlLabel control={<Checkbox name="email" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Email" />
-                                    <FormControlLabel control={<Checkbox name="phoneNumber" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Phone Number" />
-                                    <FormControlLabel control={<Checkbox name="shippingAddress" onClick={handleRequiredInfo} sx={{ marginLeft: '10px'}}/>} label="Shipping Address" />
-                                    <FormControlLabel control={<Checkbox sx={{ marginLeft: '10px'}} onClick={()=> alert('not implemented yet.')}/>} label="Additional Information" />
+                                    <FormControlLabel control={<Checkbox name="name" onClick={handleRequiredInfo} sx={{ marginLeft: '10px' }} />} label="Name" />
+                                    <FormControlLabel control={<Checkbox name="email" onClick={handleRequiredInfo} sx={{ marginLeft: '10px' }} />} label="Email" />
+                                    <FormControlLabel control={<Checkbox name="phoneNumber" onClick={handleRequiredInfo} sx={{ marginLeft: '10px' }} />} label="Phone Number" />
+                                    <FormControlLabel control={<Checkbox name="shippingAddress" onClick={handleRequiredInfo} sx={{ marginLeft: '10px' }} />} label="Shipping Address" />
+                                    <FormControlLabel control={<Checkbox sx={{ marginLeft: '10px' }} onClick={() => alert('not implemented yet.')} />} label="Additional Information" />
                                 </Grid>
                                 {/* <Grid item md={6} xs={12}>
                                     <TextField
