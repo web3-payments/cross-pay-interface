@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 
 const PaymentDetails = ({paymentInfo, mock, setPaymentInfo}) => {
-    const USDCtoWei = (num) =>  (num * (10 ** (6))).toString();
+    const weiFormatter = (num, decimals) => (num * (10 ** (decimals))).toString()
     const toWei = (num) => ethers.utils.parseEther(num.toString());
     const fromWei = (num) => ethers.utils.formatEther(num);
     const pay = async () => {
@@ -102,7 +102,8 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
     console.log(`Transaction Hash: ${approvalTransaction.hash}`);
     const approvalResult = await approvalTransaction.wait();
     console.log(approvalResult);
-    const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", USDCtoWei(paymentInfo.amount)); // use the amount from the paymentInfo
+    const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", 
+        weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals)); // use the amount from the paymentInfo
     console.log(`Transaction Hash: ${transaction.hash}`);
     const result = await transaction.wait();
     console.log(result);
