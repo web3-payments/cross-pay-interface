@@ -159,6 +159,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
     }
 
     const isReadyToPay = () => {
+        if(paymentInfo?.paymentStatus === "DEACTIVATED") {
+            return false;
+        }
         if(isCustomerRequiredInfo){
             if(paymentInfo?.customerRequiredInfo?.name && isNotFilled(paymentInfo?.customerInfo?.name)){
                 return false;
@@ -220,6 +223,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                 <Box sx={{m: 2}} >
                     <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
                 </Box>
+                {paymentInfo.paymentStatus === 'DEACTIVATED' && 
+                    <CardHeader title="Information" subheader="Link not valid anymore"/>
+                }
                 {/* <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/> */}
                 <Divider />
                 <CardContent>

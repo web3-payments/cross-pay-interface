@@ -130,7 +130,7 @@ export const PaymentListResults = ({ payments}) => {
                       <IconButton color="primary" aria-label="edit" component="label">
                         <ReceiptLongOutlinedIcon />
                       </IconButton>
-                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID"  && payment.paymentStatus !== "DEACTIVATED" && 
+                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && payment.paymentStatus !== "DEACTIVATED" && 
                         <IconButton color="primary" aria-label="cancel" component="label"
                           onClick={() => {cancelPayment(payment.hash)}}>
                           <BlockOutlinedIcon />
