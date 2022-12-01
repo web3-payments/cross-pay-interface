@@ -409,7 +409,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
-                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay()}>
+                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
                         Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                     </Button>
                 </Box>
