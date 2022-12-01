@@ -3,7 +3,7 @@ import PerfectScrollbar from 'react-perfect-scrollbar';
 import { config } from "../../../config";
 import axios from "axios";
 import { format } from 'date-fns';
-import { Chip, Box, Card, Checkbox, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton } from '@mui/material';
+import { FormControl, Chip, Box, Card, TextField, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
@@ -57,6 +57,7 @@ export const PaymentListResults = ({ payments}) => {
     await axios.post(`${config.contextRoot}/payment/${hash}/cancellation`);
   }
 
+  //TODO: Move this to a utils class, it might ve used by other types of payments
   const paymentStatusTag = (param) => {
     switch(param) {
       case 'CREATED':
@@ -64,6 +65,10 @@ export const PaymentListResults = ({ payments}) => {
       case 'PAID':
         return <Chip label={param} color='success'/>;
       case 'CANCELLED':
+        return <Chip label={param} color='error'/>;
+      case 'ACTIVATED':
+        return <Chip label={param} color='info'/>;
+      case 'DEACTIVATED':
         return <Chip label={param} color='error'/>;
       default:
         return <Chip label={param} color='warning'/>;
@@ -77,14 +82,14 @@ export const PaymentListResults = ({ payments}) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell sx={{ width: 125 }} size="small">
                   Amount
+                </TableCell>
+                <TableCell  sx={{ width: 600 }}>
+                  Link
                 </TableCell>
                 <TableCell>
                   Status
-                </TableCell>
-                <TableCell>
-                  Title
                 </TableCell>
                 <TableCell>
                   Creation date
@@ -101,14 +106,18 @@ export const PaymentListResults = ({ payments}) => {
                   key={payment.id}
                   selected={selectedCustomerIds.indexOf(payment.id) !== -1}
                 >
+                  <TableCell>  
+                    <FormControl fullWidth={false} sx={{ m: 1 }}>
+                      {`${payment.amount} ${payment.cryptocurrency.symbol}`}
+                    </FormControl>
+                  </TableCell>
                   <TableCell>
-                    {`${payment.amount} - ${payment.cryptocurrency.symbol}`}
+                    <FormControl fullWidth sx={{ m: 1 }}>
+                      <TextField id="paymentLink" defaultValue={payment.paymentLink} size="small" />
+                    </FormControl>
                   </TableCell>
                   <TableCell>
                     {paymentStatusTag(payment.paymentStatus)}
-                  </TableCell>
-                  <TableCell>
-                    {`${payment.title}`}
                   </TableCell>
                   <TableCell>
                     {format(Date.parse(payment.createdAt), 'dd/MM/yyyy')} 
@@ -121,7 +130,7 @@ export const PaymentListResults = ({ payments}) => {
                       <IconButton color="primary" aria-label="edit" component="label">
                         <ReceiptLongOutlinedIcon />
                       </IconButton>
-                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && 
+                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID"  && payment.paymentStatus !== "DEACTIVATED" && 
                         <IconButton color="primary" aria-label="cancel" component="label"
                           onClick={() => {cancelPayment(payment.hash)}}>
                           <BlockOutlinedIcon />
