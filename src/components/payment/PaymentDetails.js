@@ -248,10 +248,10 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                         />
                                         {paymentInfo?.adjustableQuantity && 
                                             <ListItemSecondaryAction>
-                                                <IconButton disabled={product.item?.totalSupply === 0} aria-label="plus" onClick={() => addQuantity(product)}>
+                                                <IconButton disabled={product.item?.totalSupply === 0 || mock} aria-label="plus" onClick={() => addQuantity(product)}>
                                                     <AddRoundedIcon  />
                                                 </IconButton>
-                                                <IconButton disabled={product.quantity === 1} aria-label="minus"  onClick={() => removeQuantity(product)}>
+                                                <IconButton disabled={product.quantity === 1 || mock} aria-label="minus"  onClick={() => removeQuantity(product)}>
                                                     <RemoveRoundedIcon />
                                                 </IconButton>
                                             </ListItemSecondaryAction>
