@@ -18,7 +18,7 @@ const items = [
   {
     href: '/payments',
     icon: (<PaymentsIcon />),
-    title: 'Payments'
+    title: 'Payments Links'
   },
   {
     href: '/customers',
