@@ -63,12 +63,12 @@ const PaymentPage = (props) => {
       <br/>
       <Box  component="main" sx={{ flexGrow: 1, py: 1 }}>
       <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <Grid item lg={5}>
+      <Grid sx={{ display: "flex" }}>
           <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo}/>
         </Grid>
       </Grid>
       </Box>
-      <div className="footer">Powered by CrossPay | terms | privacy</div>
+      {/* <div className="footer">Powered by CrossPay | terms | privacy</div> */}
     </React.Fragment>
   )
 }
