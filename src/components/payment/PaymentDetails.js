@@ -218,6 +218,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
             <Card>
                 <Box sx={{m: 2}} >
                     <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
+                    <Typography sx={{ m: 1 }} color="inherit" variant="h6">
+                        {paymentInfo?.user?.companyName}
+                    </Typography>
                 </Box>
                 {/* <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/> */}
                 <Divider />
@@ -225,11 +228,6 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                     <Grid container spacing={3}>
                         <Grid container sx={{ flex: '1 1 auto' }}>
                         <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 6 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
-                            <Grid item md={12} xs={12}>
-                                <Typography sx={{ m: 1 }} color="inherit" variant="h4">
-                                    {paymentInfo?.user?.companyName}
-                                </Typography>
-                            </Grid>
                             <List dense={true}>
                                 {paymentInfo?.products?.length > 0 && 
                                     paymentInfo?.products.map((product) => (
@@ -262,9 +260,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             </List>
                             <Divider/>
                             {paymentInfo?.amount &&
-                                <Grid item xs={12} lg={12}  >              
-                                    <Typography sx={{ mt: 3, ml: '40%' }} variant="h6">
-                                        Total due: {paymentInfo?.amount} {paymentInfo?.currency}
+                                <Grid item xs={12} lg={12} align="right">              
+                                    <Typography sx={{ mt: 3, ml: '40%', mr: '5%' }} variant="h6">
+                                        Total: {paymentInfo?.amount} {paymentInfo?.currency}
                                     </Typography>
                                 </Grid>
                             }
@@ -402,9 +400,6 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                         }
                     </Grid>     
                     </Grid>
-                    <Typography sx={{m: 3}} color="textSecondary" variant="body2" >
-                        Powered by CrossPay | Tems Privacy
-                    </Typography>
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
@@ -412,6 +407,11 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                         Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                     </Button>
                 </Box>
+                    <Box sx={{ p: 2 }}>
+                    <Typography  align="center" color="textSecondary" variant="body2" >
+                        Powered by CrossPay Crypto
+                    </Typography>
+                    </Box>
             </Card>
         </Box>
     );
