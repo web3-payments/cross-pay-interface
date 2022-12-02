@@ -262,7 +262,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             {paymentInfo?.amount &&
                                 <Grid item xs={12} lg={12} align="right">              
                                     <Typography sx={{ mt: 3, ml: '40%', mr: '5%' }} variant="h6">
-                                        Total: {paymentInfo?.amount} {paymentInfo?.currency}
+                                        {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                                     </Typography>
                                 </Grid>
                             }
