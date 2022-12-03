@@ -343,7 +343,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             Shipping Address
                                         </Typography>
                                     </Grid>
-                                    <Grid  item lg={12} sx={{ m: 0.6 }}>    
+                                    <Grid xs={12} lg={12} item sx={{ m: 0.6 }}> 
                                         <FormControl fullWidth >
                                             <InputLabel id="select-country-code">Select Country</InputLabel>
                                                 <Select
