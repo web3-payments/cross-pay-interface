@@ -220,8 +220,11 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
             width={`${mock ? '70%' : '100%'} `}
         >
             <Card>
-                <Box sx={{m: 2}} >
+                <Box sx={{m: 2, textTransform: 'uppercase'}} >
                     <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
+                    <Typography color="inherit" variant="h6">
+                        {paymentInfo?.user?.companyName}
+                    </Typography>
                 </Box>
                 {paymentInfo.paymentStatus === 'DEACTIVATED' && 
                     <CardHeader title="Information" subheader="Link not valid anymore"/>
@@ -232,12 +235,10 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                     <Grid container spacing={3}>
                         <Grid container sx={{ flex: '1 1 auto' }}>
                         <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 6 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
-                            <Grid item md={12} xs={12}>
-                                <Typography sx={{ m: 1 }} color="inherit" variant="h4">
-                                    {paymentInfo?.user?.companyName}
-                                </Typography>
-                            </Grid>
-                            <List dense={true}>
+                        <Typography sx={{ p: 2 }} variant="overline">
+                                Your Items
+                            </Typography>
+                            <List sx={{textTransform: 'capitalize'}} dense={true}>
                                 {paymentInfo?.products?.length > 0 && 
                                     paymentInfo?.products.map((product) => (
                                     <ListItem key={product.item.id} button>
@@ -249,8 +250,8 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             />
                                         </ListItemAvatar>
                                         <ListItemText
-                                            primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
-                                            secondary={`${product.quantity}x`}
+                                            primary={`${product.item?.name}`}
+                                            secondary={`${paymentInfo?.amount} ${product.item?.cryptocurrency.symbol}`}
                                         />
                                         {paymentInfo?.adjustableQuantity && 
                                             <ListItemSecondaryAction>
@@ -260,6 +261,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                 <IconButton disabled={product.quantity === 1 || mock} aria-label="minus"  onClick={() => removeQuantity(product)}>
                                                     <RemoveRoundedIcon />
                                                 </IconButton>
+                                                <ListItemText
+                                            secondary={`Quantity: ${product.quantity}`}
+                                        />
                                             </ListItemSecondaryAction>
                                         }
                                     </ListItem>
@@ -269,9 +273,9 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             </List>
                             <Divider/>
                             {paymentInfo?.amount &&
-                                <Grid item xs={12} lg={12}  >              
-                                    <Typography sx={{ mt: 3, ml: '40%' }} variant="h6">
-                                        Total due: {paymentInfo?.amount} {paymentInfo?.currency}
+                                <Grid item xs={12} lg={12} align="right">              
+                                    <Typography sx={{ mt: 3, ml: '40%', mr: '5%' }} variant="h6">
+                                        {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                                     </Typography>
                                 </Grid>
                             }
@@ -281,12 +285,12 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
                                 <Grid container sx={{ m: 1 }}>  
                                     <Grid item xs={12} lg={12}>              
-                                    <Typography sx={{ m: 1 }} variant="h6">
+                                    <Typography sx={{ m: 1 }} variant="overline">
                                         Contact Information
                                     </Typography>
                                     </Grid>
                                     {paymentInfo?.customerRequiredInfo.name && 
-                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.6  }}>   
                                             <FormControl  fullWidth>
                                                 <TextField
                                                     id="outlined-number"
@@ -301,7 +305,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                         </Grid>
                                     }
                                     {paymentInfo?.customerRequiredInfo.email &&  
-                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>   
                                             <FormControl  fullWidth>
                                                 <TextField
                                                     id="outlined-number"
@@ -316,7 +320,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                         </Grid>
                                     }
                                     {paymentInfo?.customerRequiredInfo.phoneNumber &&  
-                                        <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                        <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>   
                                             <FormControl  fullWidth>
                                                 <TextField
                                                     id="outlined-number"
@@ -335,11 +339,11 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             {paymentInfo?.customerRequiredInfo.shippingAddress &&
                                 <Grid container sx={{ m: 1 }}>  
                                     <Grid item xs={12} lg={12}>              
-                                        <Typography sx={{ m: 1 }} variant="h6">
+                                        <Typography sx={{ m: 1 }} variant="overline">
                                             Shipping Address
                                         </Typography>
                                     </Grid>
-                                    <Grid  item lg={12} sx={{ m: 0.3 }}>    
+                                    <Grid  item lg={12} sx={{ m: 0.6 }}>    
                                         <FormControl fullWidth >
                                             <InputLabel id="select-country-code">Select Country</InputLabel>
                                                 <Select
@@ -357,7 +361,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                 </Select>
                                         </FormControl>
                                     </Grid>
-                                    <Grid xs={12} lg={12} item sx={{ m: 0.3 }}>   
+                                    <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>   
                                         <FormControl fullWidth >
                                         <TextField
                                             id="outlined-number"
@@ -370,7 +374,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                         />
                                         </FormControl>
                                     </Grid>
-                                    <Grid item sx={{ m: 0.3 }}>
+                                    <Grid item sx={{ m: 0.6 }}>
                                         <TextField
                                             id="outlined-number"
                                             label="City"
@@ -381,7 +385,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             onChange={handleCustomerShippingInfo}
                                         />
                                     </Grid>
-                                    <Grid item sx={{ m: 0.3 }}>
+                                    <Grid item sx={{ m: 0.6 }}>
                                         <TextField
                                             id="outlined-number"
                                             label="Zip code"
@@ -392,7 +396,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             onChange={handleCustomerShippingInfo}
                                         />
                                     </Grid>
-                                    <Grid item sx={{ m: 0.3 }}>
+                                    <Grid item sx={{ m: 0.6 }}>
                                         <TextField
                                             id="outlined-number"
                                             label="State"
@@ -409,9 +413,6 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                         }
                     </Grid>     
                     </Grid>
-                    <Typography sx={{m: 3}} color="textSecondary" variant="body2" >
-                        Powered by CrossPay | Tems Privacy
-                    </Typography>
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
@@ -419,6 +420,11 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                         Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                     </Button>
                 </Box>
+                <Box sx={{ display: 'center', justifyContent: 'center', p: 1 }}>
+                    <Typography color="textSecondary" variant="overline"  >
+                        Powered by CrossPay Crypto
+                    </Typography>
+                    </Box>
             </Card>
         </Box>
     );
