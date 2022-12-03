@@ -26,7 +26,7 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
             <Grid container sx={{ flex: '1 1 auto' }}>
                 <Card sx={{ boxShadow: 'none' }}>
                     <CardHeader
-                        subheader="Provide the information to upload the product"
+                        subheader="Product details"
                         title="Product Creation"
                     />
                     <Divider />
@@ -35,7 +35,6 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
                             <Grid item md={9} xs={12}>
                                 <TextField
                                     fullWidth
-                                    helperText="Please the product name"
                                     label="Name"
                                     name="name"
                                     onChange={handleChange}
@@ -52,6 +51,7 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
                                     value={productDetails?.totalSupply || ''}
                                     onChange={handleChange}
                                     min="0"
+                                    required
                                     type="number"
                                     InputLabelProps={{
                                         shrink: true,
@@ -64,7 +64,6 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
                                     label="Description"
                                     name="description"
                                     onChange={handleChange}
-                                    required
                                     value={productDetails?.description || ''}
                                     variant="outlined"
                                 />
@@ -79,13 +78,14 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
                                     name="price"
                                     onChange={handleChange}
                                     type="number"
+                                    required
                                     value={productDetails?.price || ''}
                                     variant="outlined"
                                 />
                             </Grid>
                             <Grid item md={4} xs={12}>
                                 <FormControl fullWidth >
-                                        <InputLabel id="select-crypto">Crytocurrency</InputLabel>
+                                        <InputLabel required id="select-crypto">Token</InputLabel>
                                             <Select
                                                 labelId="select-crypto"
                                                 id="select-crypto"

@@ -8,7 +8,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
-export const PaymentListResults = ({ payments}) => {
+export const PaymentListResults = ({ payments }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -82,8 +82,8 @@ export const PaymentListResults = ({ payments}) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: 125 }} size="small">
-                  Amount
+                <TableCell  sx={{ width: 125, px: 2 }} size="small">
+                  Total
                 </TableCell>
                 <TableCell  sx={{ width: 600 }}>
                   Link
@@ -112,8 +112,8 @@ export const PaymentListResults = ({ payments}) => {
                     </FormControl>
                   </TableCell>
                   <TableCell>
-                    <FormControl fullWidth sx={{ m: 1 }}>
-                      <TextField id="paymentLink" defaultValue={payment.paymentLink} size="small" />
+                    <FormControl>
+                      {payment.paymentLink}
                     </FormControl>
                   </TableCell>
                   <TableCell>
