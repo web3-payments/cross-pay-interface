@@ -93,17 +93,16 @@ async function paymentNativeToken(paymentContract, paymentInfo) {
 async function paymentERC20(paymentContract, paymentInfo, signer) {
     // TODO: Create a util class to handle smart contract operations // paymentExecution 
     const ERC20Contract = new Contract(
-        "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", //TODO: move to a consts class
+        paymentInfo.cryptocurrency.address, 
         ERC20.abi, 
         signer
     );
     const approvalTransaction = await ERC20Contract.approve("0x294eb269DD01e2700dB044F9fA9bF86dBf71aB45", 
-       100000000000000 ); //TODO: move to a consts class
+        weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
     console.log(`Transaction Hash: ${approvalTransaction.hash}`);
     const approvalResult = await approvalTransaction.wait();
     console.log(approvalResult);
-    const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", 
-        weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals)); // use the amount from the paymentInfo
+    const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, paymentInfo.cryptocurrency.address, weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
     console.log(`Transaction Hash: ${transaction.hash}`);
     const result = await transaction.wait();
     console.log(result);
