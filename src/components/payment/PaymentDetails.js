@@ -255,7 +255,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                                     <RemoveRoundedIcon />
                                                 </IconButton>
                                                 <ListItemText
-                                            primary={`Quantity: ${product.quantity}`}
+                                            secondary={`Quantity: ${product.quantity}`}
                                         />
                                             </ListItemSecondaryAction>
                                         }
