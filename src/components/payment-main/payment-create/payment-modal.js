@@ -157,7 +157,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                             onChange={handleProductChange}
                                         >
                                             {paymentDetails.cryptocurrency ?
-                                                products?.filter(prd => prd.cryptocurrency === paymentDetails.cryptocurrency).map((product) => (
+                                                products?.filter(prd => prd.cryptocurrency.id === paymentDetails.cryptocurrency.id).map((product) => (
                                                     <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
                                                 )) :
                                                 products?.map((product) => (
