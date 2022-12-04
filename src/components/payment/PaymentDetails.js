@@ -233,7 +233,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                 <CardContent>
                     <Grid container spacing={3}>
                         <Grid container sx={{ flex: '1 1 auto' }}>
-                        <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 6 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                        <Grid item xs={12} lg={isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo)? 12 : 12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
                         <Typography sx={{ p: 2 }} variant="overline">
                                 Your Items
                             </Typography>
@@ -273,14 +273,14 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                             <Divider/>
                             {paymentInfo?.amount &&
                                 <Grid item xs={12} lg={12} align="right">              
-                                    <Typography sx={{ mt: 3, ml: '40%', mr: '5%' }} variant="h6">
+                                    <Typography sx={{ mt: 3, mr: '1%' }} variant="overline">
                                         {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                                     </Typography>
                                 </Grid>
                             }
                         </Grid>
                         {isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo) && 
-                        <Grid item xs={12} lg={6} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                        <Grid item xs={12} lg={12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
                             {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
                                 <Grid container sx={{ m: 1 }}>  
                                     <Grid item xs={12} lg={12}>              
@@ -373,7 +373,8 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                         />
                                         </FormControl>
                                     </Grid>
-                                    <Grid item sx={{ m: 0.6 }}>
+                                    <Grid lg={7} item sx={{ m: 0.6 }}>
+                                    <FormControl fullWidth >
                                         <TextField
                                             id="outlined-number"
                                             label="City"
@@ -383,8 +384,10 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             value={paymentInfo?.customerInfo?.shippingAddress?.city || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
+                                        </FormControl>
                                     </Grid>
-                                    <Grid item sx={{ m: 0.6 }}>
+                                    <Grid lg={4.6} item sx={{ m: 0.6 }}>
+                                    <FormControl fullWidth >
                                         <TextField
                                             id="outlined-number"
                                             label="Zip code"
@@ -394,8 +397,10 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             value={paymentInfo?.customerInfo?.shippingAddress?.zipCode || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
+                                    </FormControl>
                                     </Grid>
-                                    <Grid item sx={{ m: 0.6 }}>
+                                    <Grid lg={12} item sx={{ m: 0.6 }}>
+                                    <FormControl fullWidth >
                                         <TextField
                                             id="outlined-number"
                                             label="State"
@@ -405,6 +410,7 @@ async function paymentERC20(paymentContract, paymentInfo, signer) {
                                             value={paymentInfo?.customerInfo?.shippingAddress?.state || ''}
                                             onChange={handleCustomerShippingInfo}
                                         />
+                                    </FormControl>
                                     </Grid>
                                 </Grid>
                             }
