@@ -61,9 +61,9 @@ const PaymentPage = (props) => {
         </Toolbar>
       </AppBar>
       <br/>
-      <Box  component="main" sx={{ flexGrow: 1, p: 6 }}>
-      <Grid container spacing={3} sx={{display: 'block', alignItems: 'center', justifyContent: 'center'}}>
-      <Grid>
+      <Box  component="main" sx={{ flexGrow: 1, p: 2 }}>
+      <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <Grid item lg={6}>
           <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo}/>
         </Grid>
       </Grid>
