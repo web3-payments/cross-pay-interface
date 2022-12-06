@@ -7,43 +7,13 @@ import { FormControl, Chip, Box, Card, TextField, Table, TableBody, TableCell, T
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import { useNavigate } from 'react-router-dom';
+import Tooltip from '@mui/material/Tooltip';
 
 export const PaymentListResults = ({ payments }) => {
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
+  const navigate = useNavigate();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
-
-  const handleSelectAll = (event) => {
-    let newSelectedCustomerIds;
-
-    if (event.target.checked) {
-      newSelectedCustomerIds = payments.map((customer) => customer.id);
-    } else {
-      newSelectedCustomerIds = [];
-    }
-
-    setSelectedCustomerIds(newSelectedCustomerIds);
-  };
-
-  const handleSelectOne = (event, id) => {
-    const selectedIndex = selectedCustomerIds.indexOf(id);
-    let newSelectedCustomerIds = [];
-
-    if (selectedIndex === -1) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(selectedCustomerIds, id);
-    } else if (selectedIndex === 0) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(selectedCustomerIds.slice(1));
-    } else if (selectedIndex === selectedCustomerIds.length - 1) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(selectedCustomerIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(
-        selectedCustomerIds.slice(0, selectedIndex),
-        selectedCustomerIds.slice(selectedIndex + 1)
-      );
-    }
-
-    setSelectedCustomerIds(newSelectedCustomerIds);
-  };
 
   const handleLimitChange = (event) => {
     setLimit(event.target.value);
@@ -101,11 +71,7 @@ export const PaymentListResults = ({ payments }) => {
             </TableHead>
             <TableBody>
               {payments?.slice(0, limit).map((payment) => (
-                <TableRow
-                  hover
-                  key={payment.id}
-                  selected={selectedCustomerIds.indexOf(payment.id) !== -1}
-                >
+                <TableRow hover key={payment.id}>
                   <TableCell>  
                     <FormControl fullWidth={false} sx={{ m: 1 }}>
                       {`${payment.amount} ${payment.cryptocurrency.symbol}`}
@@ -123,18 +89,25 @@ export const PaymentListResults = ({ payments }) => {
                     {format(Date.parse(payment.createdAt), 'dd/MM/yyyy')} 
                   </TableCell>
                   <TableCell>
-                      <IconButton color="primary" aria-label="edit" component="label"
-                        onClick={() => {navigator.clipboard.writeText(payment.paymentLink)}}>
-                        <ContentCopyIcon />
-                      </IconButton>
-                      <IconButton color="primary" aria-label="edit" component="label">
-                        <ReceiptLongOutlinedIcon />
-                      </IconButton>
-                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && payment.paymentStatus !== "DEACTIVATED" && 
-                        <IconButton color="primary" aria-label="cancel" component="label"
-                          onClick={() => {cancelPayment(payment.hash)}}>
-                          <BlockOutlinedIcon />
+                      <Tooltip title="Copy Payment Link">
+                        <IconButton color="primary" aria-label="edit" component="label"
+                          onClick={() => {navigator.clipboard.writeText(payment.paymentLink)}}>
+                          <ContentCopyIcon />
                         </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Transactions">
+                        <IconButton color="primary" aria-label="transactions" component="label"
+                            onClick={() => navigate(`/transactions/${payment.hash}`)}>
+                            <ReceiptLongOutlinedIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && payment.paymentStatus !== "DEACTIVATED" && 
+                        <Tooltip title="Deactivate">
+                            <IconButton color="primary" aria-label="cancel" component="label"
+                              onClick={() => {cancelPayment(payment.hash)}}>
+                              <BlockOutlinedIcon />
+                            </IconButton>
+                          </Tooltip>
                       }
                   </TableCell>
                 </TableRow>
