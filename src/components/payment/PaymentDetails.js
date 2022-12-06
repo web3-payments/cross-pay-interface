@@ -24,9 +24,8 @@ import {
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const [paymentConfirmation, setPaymentConfirmation] = useState({});
-    const weiFormatter = (num, decimals) => (num * (10 ** (decimals))).toString()
-    const toWei = (num) => ethers.utils.parseEther(num.toString());
-    const fromWei = (num) => ethers.utils.formatEther(num);
+    const toWei = (num, decimals) => ethers.utils.parseUnits(num.toString(), decimals.toString());
+    const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
     const pay = async () => {
         if(mock){
             return;
@@ -101,11 +100,11 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             signer
         );
         const approvalTransaction = await ERC20Contract.approve("0x294eb269DD01e2700dB044F9fA9bF86dBf71aB45",
-            weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
+            toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
         console.log(`Transaction Hash: ${approvalTransaction.hash}`);
         const approvalResult = await approvalTransaction.wait();
         console.log(approvalResult);
-        const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, paymentInfo.cryptocurrency.address, weiFormatter(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
+        const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, paymentInfo.cryptocurrency.address, toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
         console.log(`Transaction Hash: ${transaction.hash}`);
         const result = await transaction.wait();
         console.log(result);
@@ -198,10 +197,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply--;
         paymentInfo.products[index].quantity++;
-        //TODO: this must be changed - when implemented new types of coins
-        const totalAmount = toWei(currentAmount).add(toWei(product.item.price));
-        console.log(totalAmount);
-        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount) });
+        const totalAmount = toWei(currentAmount, product.cryptocurrency.decimals).add(toWei(product.item.price, product.cryptocurrency.decimals));
+        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, product.cryptocurrency.decimals) });
     }
 
     const removeQuantity = (product) => {
@@ -209,9 +206,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply++;
         paymentInfo.products[index].quantity--;
-        //TODO: this must be changed - when implemented new types of coins
-        const totalAmount = toWei(currentAmount).sub(toWei(product.item.price));
-        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount) });
+        const totalAmount = toWei(currentAmount, product.cryptocurrency.decimals).sub(toWei(product.item.price, product.cryptocurrency.decimals));
+        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, product.cryptocurrency.decimals) });
     }
 
     return (
@@ -256,22 +252,22 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                         </ListItemAvatar>
                                         <ListItemText
                                             primary={`${product.item?.name}`}
-                                            secondary={`${paymentInfo?.amount} ${product.item?.cryptocurrency.symbol}`}
+                                            secondary={`${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
                                         />
-                                        {paymentInfo?.adjustableQuantity &&
-                                            <ListItemSecondaryAction>
+                                        <ListItemSecondaryAction>
+                                            {paymentInfo?.adjustableQuantity &&
+                                            <>
                                                 <IconButton disabled={product.item?.totalSupply === 0 || mock} aria-label="plus" onClick={() => addQuantity(product)}>
                                                     <AddRoundedIcon  />
                                                 </IconButton>
                                                 <IconButton disabled={product.quantity === 1 || mock} aria-label="minus"  onClick={() => removeQuantity(product)}>
                                                     <RemoveRoundedIcon />
                                                 </IconButton>
-                                             <ListItemText secondary={`Quantity: ${product.quantity}`} />
-                                            </ListItemSecondaryAction>
-                                        }
+                                            </>
+                                            }
+                                            <ListItemText secondary={`Quantity: ${product.quantity}`} />
+                                        </ListItemSecondaryAction>
                                     </ListItem>
-
-
                                 ))}
                             </List>
                             <Divider/>
