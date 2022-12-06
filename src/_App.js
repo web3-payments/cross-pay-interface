@@ -11,6 +11,7 @@ import Settings from './pages/settings'
 import ErrorPage from './pages/error'
 import { registerChartJs } from './utils/register-chart-js';
 import Wallets from './pages/wallets'
+import Transactions from './pages/transactions'
 
 registerChartJs();
 
@@ -25,6 +26,7 @@ function App() {
             <Route path="/" element={<Dashboard />}/>
             <Route path="/customers" element={<Customer />}/>
             <Route path="/payments" element={<Payments />}/>
+            <Route path="/transactions/:paymentHash" element={<Transactions />}/>
             <Route path="/products" element={<Products />}/>
             <Route path="/accounts" element={<Accounts />}/>
             <Route path="/wallets" element={<Wallets />}/>
