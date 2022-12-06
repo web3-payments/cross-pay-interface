@@ -29,7 +29,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="transactionHash"
                                 label="Transaction Hash"
-                                defaultValue={transactionDetails.transactionHash}
+                                defaultValue={transactionDetails?.transactionHash}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -40,7 +40,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="blockHash"
                                 label="Block Hash"
-                                defaultValue={transactionDetails.blockHash}
+                                defaultValue={transactionDetails?.blockHash}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -51,7 +51,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="blockNumber"
                                 label="Block Number"
-                                defaultValue={transactionDetails.blockNumber}
+                                defaultValue={transactionDetails?.blockNumber}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -62,7 +62,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="gasUsed"
                                 label="Gas Used"
-                                defaultValue={transactionDetails.gasUsed}
+                                defaultValue={transactionDetails?.gasUsed}
                                 // defaultValue="54433 *convert to ether or the currency that was settled"
                                 InputProps={{
                                   readOnly: true,
@@ -74,7 +74,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="toAddress"
                                 label="Beneficiary"
-                                defaultValue={transactionDetails.toAddress}
+                                defaultValue={transactionDetails?.toAddress}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -85,7 +85,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="toAddress"
                                 label="From"
-                                defaultValue={transactionDetails.toAddress}
+                                defaultValue={transactionDetails?.toAddress}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -96,7 +96,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="executionDate"
                                 label="Excution Date"
-                                defaultValue={transactionDetails.executionDate}
+                                defaultValue={transactionDetails?.executionDate}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -107,7 +107,7 @@ const TransactionDetailsDialog = ({setOpen, open, transactionDetails}) => {
                                 fullWidth
                                 id="amount"
                                 label="Amount"
-                                defaultValue={`${transactionDetails.amount} ${transactionDetails.cryptocurrency.symbol}`}
+                                defaultValue={`${transactionDetails?.amount} ${transactionDetails?.cryptocurrency.symbol}`}
                                 InputProps={{
                                   readOnly: true,
                                 }}

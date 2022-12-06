@@ -62,7 +62,7 @@ export const TransactionListResults = ({ transactions }) => {
                     {`${transaction.amount} ${transaction.cryptocurrency.symbol}`}
                     </FormControl>
                   </TableCell>
-                  <TableCell onClick={() => setCustomerDetailsOpen(true)}>
+                  <TableCell>
                     <FormControl>
                       {transaction?.customerInfo?.email}
                     </FormControl>
@@ -81,6 +81,7 @@ export const TransactionListResults = ({ transactions }) => {
                     <ProductDetailsDialog open={productsDetailsOpen} setOpen={seProductsDetailsOpen} productDetails={transaction.products} />
                     <Tooltip title="Customer Details">
                       <IconButton color="primary" aria-label="customerDetails" component="label" 
+                        disabled={transaction.customerInfo === undefined}
                         onClick={() => setCustomerDetailsOpen(true)}>
                           <PermContactCalendarOutlinedIcon/>
                         </IconButton>

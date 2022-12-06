@@ -29,7 +29,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="name"
                                 label="Name"
-                                defaultValue={customerInfo.name}
+                                defaultValue={customerInfo?.name}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -40,7 +40,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="email"
                                 label="Email"
-                                defaultValue={customerInfo.email}
+                                defaultValue={customerInfo?.email}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -51,7 +51,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="phoneNumber"
                                 label="Email"
-                                defaultValue={customerInfo.phoneNumber}
+                                defaultValue={customerInfo?.phoneNumber}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -62,7 +62,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="address"
                                 label="Address"
-                                defaultValue={customerInfo.shippingAddress.address}
+                                defaultValue={customerInfo?.shippingAddress.address}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -73,7 +73,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="city"
                                 label="City"
-                                defaultValue={customerInfo.shippingAddress.city}
+                                defaultValue={customerInfo?.shippingAddress.city}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -84,7 +84,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="country"
                                 label="Coutry"
-                                defaultValue={customerInfo.shippingAddress.country}
+                                defaultValue={customerInfo?.shippingAddress.country}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -95,7 +95,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="state"
                                 label="State"
-                                defaultValue={customerInfo.shippingAddress.state}
+                                defaultValue={customerInfo?.shippingAddress.state}
                                 InputProps={{
                                   readOnly: true,
                                 }}
@@ -106,7 +106,7 @@ const CustomerDetailsDialog = ({setOpen, open, customerInfo}) => {
                                 fullWidth
                                 id="zipCode"
                                 label="Zip Code"
-                                defaultValue={customerInfo.shippingAddress.zipCode}
+                                defaultValue={customerInfo?.shippingAddress.zipCode}
                                 InputProps={{
                                   readOnly: true,
                                 }}
