@@ -14,7 +14,6 @@ import axios from "axios";
 const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     const userAddress = useSelector((state) => state.address);
     const [wallets, setUserWallets] = useState();
-
     useQuery(["getUserData"],
         async () =>
             await axios
@@ -22,7 +21,6 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                 .then((res) => setUserWallets(res.data)),
         { refetchOnWindowFocus: false }
     );
-
     const [products, setProducts] = useState([]);
     useQuery(["getProducts"],
         async () =>
@@ -32,21 +30,30 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
         { refetchOnWindowFocus: false }
     );
 
+    const [supportedCryptocurrencies, setSupportedCryptocurrencies] = useState();
+    useQuery(["getSupportedCryptos"],
+        async () =>
+            await axios
+                .get(`${config.contextRoot}/cryptocurrency`)
+                .then((res) => setSupportedCryptocurrencies(res.data)),
+        { refetchOnWindowFocus: false }
+    );
+
     const handleChange = (event) => {
         setPaymentDetails({ ...paymentDetails, [event.target.name]: event.target.value });
     };
 
     const [selectedProduct, setSelectedProduct] = useState();
-
     const handleProductChange = (event) => {
         setSelectedProduct(event.target.value);
     }
 
     const [selectedQuantity, setSelectedQuantity] = useState();
-
     const handleSelectedQuantity = (event) => {
         setSelectedQuantity(event.target.value);
     }
+
+    const [isFlexiPayment, setIsFlexiPayment] = useState(false);
 
     const addProduct = () => {
         if (selectedQuantity > selectedProduct.totalSupply) {
@@ -131,6 +138,22 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                             <Grid container spacing={3}>
                                 <Grid item md={12} xs={12}>
                                     <FormControl fullWidth >
+                                        <InputLabel id="select-payment-type">Payment Type</InputLabel>
+                                        <Select
+                                            labelId="select-payment-type"
+                                            id="select-payment-type"
+                                            name="paymentLinkType"
+                                            value={isFlexiPayment}
+                                            label="Payment Type"
+                                            onChange={() => setIsFlexiPayment(!isFlexiPayment)}
+                                        >
+                                            <MenuItem key={1} value={true}>Flexi Payment</MenuItem>
+                                            <MenuItem key={2} value={false}>Products / Services</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item md={12} xs={12}>
+                                    <FormControl fullWidth >
                                         <InputLabel id="select-wallet-address">Credit Wallet</InputLabel>
                                         <Select
                                             labelId="select-wallet-address"
@@ -158,80 +181,84 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                         />
                                     </FormControl>
                                 </Grid>
-                                <Grid item md={7} xs={12}>
-                                    <FormControl fullWidth >
-                                        <InputLabel id="select-product">Product</InputLabel>
-                                        <Select
-                                            labelId="select-product"
-                                            id="select-product"
-                                            value={selectedProduct || ''}
-                                            label="Product"
-                                            onChange={handleProductChange}
-                                        >
-                                            {paymentDetails.cryptocurrency ?
-                                                products?.filter(prd => prd.cryptocurrency.id === paymentDetails.cryptocurrency.id).map((product) => (
-                                                    <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
-                                                )) :
-                                                products?.map((product) => (
-                                                    <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
-                                                ))
+                                {!isFlexiPayment &&
+                                <>
+                                    <Grid item md={7} xs={12}>
+                                        <FormControl fullWidth >
+                                            <InputLabel id="select-product">Product</InputLabel>
+                                            <Select
+                                                labelId="select-product"
+                                                id="select-product"
+                                                value={selectedProduct || ''}
+                                                label="Product"
+                                                onChange={handleProductChange}
+                                            >
+                                                {paymentDetails.cryptocurrency ?
+                                                    products?.filter(prd => prd.cryptocurrency.id === paymentDetails.cryptocurrency.id).map((product) => (
+                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                    )) :
+                                                    products?.map((product) => (
+                                                        <MenuItem key={product.id} value={product}>{product.name}</MenuItem>
+                                                    ))
+                                                }
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item md={3} xs={12}>
+                                        <TextField
+                                            id="outlined-number"
+                                            label="Quantity"
+                                            type="number"
+                                            value={selectedQuantity || ''}
+                                            onChange={handleSelectedQuantity}
+                                            InputLabelProps={{
+                                                shrink: true,
+                                            }}
+                                        />
+                                    </Grid>
+                                    <Grid item md={2} xs={12} sx={{ marginTop: '10px' }}>
+                                        <Button color="success" variant="contained" onClick={addProduct}>Add</Button>
+                                    </Grid>
+                                    <Grid item md={12} xs={12}>
+                                        <FormControlLabel
+                                            label="Let customer adjust quantity"
+                                            control={
+                                                <Checkbox
+                                                    sx={{ marginLeft: '10px' }}
+                                                    onClick={handleAdjustableQuantity}
+                                                    value={paymentDetails?.adjustableQuantity | false}
+                                                    disabled={paymentDetails.products.length <= 0} />
                                             }
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item md={3} xs={12}>
-                                    <TextField
-                                        id="outlined-number"
-                                        label="Quantity"
-                                        type="number"
-                                        value={selectedQuantity || ''}
-                                        onChange={handleSelectedQuantity}
-                                        InputLabelProps={{
-                                            shrink: true,
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item md={2} xs={12} sx={{ marginTop: '10px' }}>
-                                    <Button color="success" variant="contained" onClick={addProduct}>Add</Button>
-                                </Grid>
-                                <Grid item md={12} xs={12}>
-                                    <FormControlLabel
-                                        label="Let customer adjust quantity"
-                                        control={
-                                            <Checkbox
-                                                sx={{ marginLeft: '10px' }}
-                                                onClick={handleAdjustableQuantity}
-                                                value={paymentDetails?.adjustableQuantity | false}
-                                                disabled={paymentDetails.products.length <= 0} />
-                                        }
-                                    />
-                                </Grid>
-                                <Grid item md={12} xs={12}>
-                                    <List dense={true}>
-                                        {paymentDetails.products.length > 0 &&
-                                            paymentDetails.products.map((product) => (
-                                                <ListItem key={product.item.id} button>
-                                                    <ListItemAvatar>
-                                                        <Avatar
-                                                            alt={product.item?.name}
-                                                            src={`data:image/jpeg;base64,${product.item?.image}`}
-                                                            variant="square"
+                                        />
+                                    </Grid>
+                                    <Grid item md={12} xs={12}>
+                                        <List dense={true}>
+                                            {paymentDetails.products.length > 0 &&
+                                                paymentDetails.products.map((product) => (
+                                                    <ListItem key={product.item.id} button>
+                                                        <ListItemAvatar>
+                                                            <Avatar
+                                                                alt={product.item?.name}
+                                                                src={`data:image/jpeg;base64,${product.item?.image}`}
+                                                                variant="square"
+                                                            />
+                                                        </ListItemAvatar>
+                                                        <ListItemText
+                                                            primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
+                                                            secondary={`${product.quantity}x`}
                                                         />
-                                                    </ListItemAvatar>
-                                                    <ListItemText
-                                                        primary={`${product.item?.name} - ${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
-                                                        secondary={`${product.quantity}x`}
-                                                    />
-                                                    <ListItemSecondaryAction>
-                                                        <IconButton aria-label="delete" onClick={() => removeProduct(product?.item?.id)}>
-                                                            <DeleteOutlineOutlinedIcon />
-                                                        </IconButton>
-                                                    </ListItemSecondaryAction>
-                                                </ListItem>
+                                                        <ListItemSecondaryAction>
+                                                            <IconButton aria-label="delete" onClick={() => removeProduct(product?.item?.id)}>
+                                                                <DeleteOutlineOutlinedIcon />
+                                                            </IconButton>
+                                                        </ListItemSecondaryAction>
+                                                    </ListItem>
 
-                                            ))}
-                                    </List>
-                                </Grid>
+                                                ))}
+                                        </List>
+                                    </Grid>
+                                </>
+                                }
                                 <Grid item md={12} xs={12}>
                                     <Typography sx={{ m: 1 }} variant="h6">
                                         Customer Details Required
@@ -244,28 +271,39 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                     <FormControlLabel control={<Checkbox name="shippingAddress" onClick={handleRequiredInfo} sx={{ marginLeft: '10px' }} />} label="Shipping Address" />
                                     <FormControlLabel control={<Checkbox sx={{ marginLeft: '10px' }} onClick={() => alert('not implemented yet.')} />} label="Additional Information" />
                                 </Grid>
-                                {/* <Grid item md={6} xs={12}>
-                                    <TextField
-                                        disabled={paymentDetails.products.length > 0}
-                                        fullWidth
-                                        label="Amount"
-                                        name="amount"
-                                        onChange={handleChange}
-                                        type="number"
-                                        value={paymentDetails?.amount || ''}
-                                        variant="outlined"
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Currency"
-                                        name="currency"
-                                        onChange={handleChange}
-                                        value={paymentDetails?.currency || ''}
-                                        variant="outlined"
-                                    />
-                                </Grid> */}
+                                {isFlexiPayment &&
+                                <>
+                                    <Grid item md={6} xs={12}>
+                                        <TextField
+                                            disabled={paymentDetails.products.length > 0}
+                                            fullWidth
+                                            label="Amount"
+                                            name="amount"
+                                            onChange={handleChange}
+                                            type="number"
+                                            value={paymentDetails?.amount || ''}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item md={6} xs={12}>
+                                        <FormControl fullWidth >
+                                            <InputLabel required id="select-crypto">Token</InputLabel>
+                                                <Select
+                                                    labelId="select-crypto"
+                                                    id="select-crypto"
+                                                    name="cryptocurrency"
+                                                    value={paymentDetails?.cryptocurrency || ''}
+                                                    label="Crytocurrency"
+                                                    onChange={handleChange}
+                                                >
+                                                    {supportedCryptocurrencies?.map((crypto) => (
+                                                        <MenuItem key={crypto.id} value={crypto}>{crypto.symbol}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </> 
+                                }
                             </Grid>
                         </CardContent>
                     </Card>
