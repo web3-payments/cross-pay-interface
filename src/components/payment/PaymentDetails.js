@@ -197,8 +197,9 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply--;
         paymentInfo.products[index].quantity++;
-        const totalAmount = toWei(currentAmount, product.cryptocurrency.decimals).add(toWei(product.item.price, product.cryptocurrency.decimals));
-        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, product.cryptocurrency.decimals) });
+        const cryptocurrencyDecimals = product.item.cryptocurrency.decimals;
+        const totalAmount = toWei(currentAmount, cryptocurrencyDecimals).add(toWei(product.item.price, cryptocurrencyDecimals));
+        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, cryptocurrencyDecimals) });
     }
 
     const removeQuantity = (product) => {
@@ -206,8 +207,9 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
         paymentInfo.products[index].item.totalSupply++;
         paymentInfo.products[index].quantity--;
-        const totalAmount = toWei(currentAmount, product.cryptocurrency.decimals).sub(toWei(product.item.price, product.cryptocurrency.decimals));
-        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, product.cryptocurrency.decimals) });
+        const cryptocurrencyDecimals = product.item.cryptocurrency.decimals;
+        const totalAmount = toWei(currentAmount, cryptocurrencyDecimals).sub(toWei(product.item.price, cryptocurrencyDecimals));
+        setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, cryptocurrencyDecimals) });
     }
 
     return (
