@@ -55,8 +55,8 @@ export const PaymentListResults = ({ payments }) => {
                 <TableCell  sx={{ width: 125, px: 2 }} size="small">
                   Total
                 </TableCell>
-                <TableCell  sx={{ width: 600 }}>
-                  Link
+                <TableCell  sx={{ width: 500 }}>
+                  Description
                 </TableCell>
                 <TableCell>
                   Status
@@ -79,7 +79,7 @@ export const PaymentListResults = ({ payments }) => {
                   </TableCell>
                   <TableCell>
                     <FormControl>
-                      {payment.paymentLink}
+                      {payment.description}
                     </FormControl>
                   </TableCell>
                   <TableCell>
