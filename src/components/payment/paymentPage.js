@@ -1,11 +1,11 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
-import AppBar from '@mui/material/AppBar'
-import Toolbar from '@mui/material/Toolbar'
-import { useState } from 'react';
-import { useQuery } from 'react-query';
+import React from "react";
+import { useParams } from "react-router-dom";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import { useState } from "react";
+import { useQuery } from "react-query";
 import axios from "axios";
-import AdbIcon from '@mui/icons-material/Adb';
+import AdbIcon from "@mui/icons-material/Adb";
 import {
   Box,
   Button,
@@ -14,63 +14,74 @@ import {
   CardHeader,
   Divider,
   Grid,
-  TextField, 
-  Typography 
-} from '@mui/material';
+  TextField,
+  Typography,
+} from "@mui/material";
 import { config } from "../../config";
 
-import "./paymentPage.css"
-import PaymentDetails from './PaymentDetails';
+import "./paymentPage.css";
+import PaymentDetails from "./PaymentDetails";
 
 const PaymentPage = (props) => {
-  const { paymentHash } = useParams()
-  
+  const { paymentHash } = useParams();
+
   useQuery(
-    ["getPaymentInfo", paymentHash], 
-    async () => 
+    ["getPaymentInfo", paymentHash],
+    async () =>
       await axios
         .get(`${config.contextRoot}/payment/${paymentHash}`)
         .then((res) => setPaymentInfo(res.data)),
-        {refetchOnWindowFocus: false}
+    { refetchOnWindowFocus: false }
   );
 
   const [paymentInfo, setPaymentInfo] = useState({});
-  
+
   return (
     <React.Fragment>
       <AppBar position="static" color="primary">
         <Toolbar>
-          <AdbIcon sx={{ display: { md: 'flex' }, mr: 1 }} />
+          <AdbIcon sx={{ display: { md: "flex" } }} />
           <Typography
             variant="h6"
             noWrap
             component="a"
             href="/"
             sx={{
-              mr: 2,
-              display: { md: 'flex' },
-              fontFamily: 'monospace',
+              display: { md: "flex" },
+              fontFamily: "monospace",
               fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
-              textDecoration: 'none',
+              letterSpacing: ".3rem",
+              color: "inherit",
+              textDecoration: "none",
             }}
           >
-            CrossPay 
+            CrossPay
           </Typography>
         </Toolbar>
       </AppBar>
-      <br/>
-      <Box  component="main" sx={{ flexGrow: 1, p: 2 }}>
-      <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <Grid item lg={6}>
-          <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo}/>
+      <br />
+      <Box component="main" sx={{ flexGrow: 1, p: 2 }}>
+        <Grid
+          container
+          spacing={3}
+          sx={{
+            p: 2,
+            display: { xs: "block", lg: "flex" },
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Grid item lg={6}>
+            <PaymentDetails
+              paymentInfo={paymentInfo}
+              setPaymentInfo={setPaymentInfo}
+            />
+          </Grid>
         </Grid>
-      </Grid>
       </Box>
       {/* <div className="footer">Powered by CrossPay | terms | privacy</div> */}
     </React.Fragment>
-  )
-}
+  );
+};
 
-export default PaymentPage
+export default PaymentPage;
