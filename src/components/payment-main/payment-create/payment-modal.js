@@ -146,6 +146,18 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                         </Select>
                                     </FormControl>
                                 </Grid>
+                                <Grid item md={12} xs={12}>
+                                    <FormControl fullWidth >
+                                        <TextField
+                                            id="paymentDescription"
+                                            label="Description"
+                                            name="description"
+                                            type="text"
+                                            value={paymentDetails?.description  || ''}
+                                            onChange={handleChange}
+                                        />
+                                    </FormControl>
+                                </Grid>
                                 <Grid item md={7} xs={12}>
                                     <FormControl fullWidth >
                                         <InputLabel id="select-product">Product</InputLabel>
