@@ -12,9 +12,9 @@ import DialogContent from '@mui/material/DialogContent';
 import PaymentModal from './payment-modal';
 
 export const PaymentLinkCreation = (props) => {
-  const toWei = (num) => ethers.utils.parseEther(num.toString())
-  const fromWei = (num) => ethers.utils.formatEther(num.toString())
   const userAddress = useSelector((state) => state.address);
+  const toWei = (num, decimals) => ethers.utils.parseUnits(num.toString(), decimals.toString());
+  const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
   useQuery(["getUserData"], 
     async() => 
       await axios 
@@ -50,10 +50,9 @@ export const PaymentLinkCreation = (props) => {
       return;
     }
     const totalAmount = paymentDetails.products.reduce((accumulator, value) => {
-      //TODO: this must be changed - when implemented new types of coins
-      return accumulator + (toWei(value.item.price) * value.quantity);
+      return accumulator + (toWei(value.item.price, value.item.cryptocurrency.decimals) * value.quantity);
     }, 0 )
-     setPaymentDetails({ ...paymentDetails, ["amount"]: fromWei(totalAmount) });
+     setPaymentDetails({ ...paymentDetails, ["amount"]: fromWei(totalAmount, paymentDetails.cryptocurrency.decimals) });
   }, [JSON.stringify(paymentDetails.products)])
 
   const createLink = async () => {
