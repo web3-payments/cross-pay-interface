@@ -19,8 +19,8 @@ import {
 } from '@mui/material';
 import { config } from "../../config";
 
-import "./paymentPage.css"
-import PaymentDetails from './PaymentDetails';
+import "./payment-page.css"
+import PaymentDetails from './payment-details';
 
 const PaymentPage = (props) => {
   const { paymentHash } = useParams()
@@ -64,7 +64,7 @@ const PaymentPage = (props) => {
       <Box  component="main" sx={{ flexGrow: 1, p: 2 }}>
       <Grid container spacing={3} sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
         <Grid item lg={6}>
-          <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo}/>
+          <PaymentDetails paymentInfo={paymentInfo} setPaymentInfo={setPaymentInfo} />
         </Grid>
       </Grid>
       </Box>

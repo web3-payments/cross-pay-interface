@@ -5,7 +5,7 @@ import {
     Typography
 } from '@mui/material';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import PaymentDetails from '../../payment/PaymentDetails';
+import PaymentDetails from '../../payment-page/payment-details';
 import { useSelector } from 'react-redux';
 import { useQuery } from 'react-query';
 import { config } from "../../../config";
