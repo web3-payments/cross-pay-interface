@@ -168,3 +168,5 @@ export const WalletListResults = ({ wallets }) => {
     </Card>
   );
 };
+
+export default WalletListResults;

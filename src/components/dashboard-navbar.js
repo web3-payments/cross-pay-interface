@@ -114,12 +114,9 @@ export const DashboardNavbar = (props) => {
       library = new ethers.providers.Web3Provider(provider);
       accounts = await library.listAccounts();
       network = await library.getNetwork();
-      console.log("aqui1");
     } catch (error) {
       console.error(error);
     }
-
-    console.log("aqui2");
     setProvider(provider);
     setLibrary(library);
     setNetwork(network);

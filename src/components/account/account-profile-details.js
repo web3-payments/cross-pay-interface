@@ -11,21 +11,26 @@ import {
 import { config } from "../../config";
 import axios from "axios";
 
-export const AccountProfileDetails = (props) => {
+export const AccountProfileDetails = ({user, updateUser, fetchUserData, triggerAlert}) => {
   const handleChange = (event) => {
-    props.updateUser({
-      ...props.user,
-      [event.target.name]: event.target.value,
-    });
+    updateUser({...user,[event.target.name]: event.target.value});
   };
 
   const updateUserData = async (event) => {
     event.preventDefault();
-    props.updateUser(props.user);
-    await axios.put(
-      `${config.contextRoot}/user/${props.user.signerAddress}`,
-      props.user
-    );
+    updateUser(user);
+    await axios
+      .put(`${config.contextRoot}/user/${user.signerAddress}`,user)
+      .then(function (response) {
+        if(response.status === 200){
+          console.log("Done");
+          fetchUserData();
+          triggerAlert("success", "Success", "Account information updated", null)
+        }
+      }).catch(function (error) {
+          console.error(error)
+          triggerAlert("error", "Error", "Failed to update account information", error.message)
+      });
   };
 
   return (
@@ -41,7 +46,7 @@ export const AccountProfileDetails = (props) => {
                 label="Company Name"
                 name="companyName"
                 onChange={handleChange}
-                value={props.user?.companyName || ""}
+                value={user?.companyName || ""}
                 variant="outlined"
               />
             </Grid>
@@ -52,7 +57,7 @@ export const AccountProfileDetails = (props) => {
                 label="First name"
                 name="firstName"
                 onChange={handleChange}
-                value={props.user?.firstName || ""}
+                value={user?.firstName || ""}
                 variant="outlined"
               />
             </Grid>
@@ -62,7 +67,7 @@ export const AccountProfileDetails = (props) => {
                 label="Last name"
                 name="lastName"
                 onChange={handleChange}
-                value={props.user?.lastName || ""}
+                value={user?.lastName || ""}
                 variant="outlined"
               />
             </Grid>
@@ -72,7 +77,7 @@ export const AccountProfileDetails = (props) => {
                 label="Email Address"
                 name="email"
                 onChange={handleChange}
-                value={props.user?.email || ""}
+                value={user?.email || ""}
                 variant="outlined"
               />
             </Grid>
@@ -83,43 +88,10 @@ export const AccountProfileDetails = (props) => {
                 name="phone"
                 onChange={handleChange}
                 type="number"
-                value={props.user?.phone || ""}
+                value={user?.phone || ""}
                 variant="outlined"
               />
             </Grid>
-            {/* <Grid item md={6} xs={12}>
-              <TextField
-                fullWidth
-                label="Country"
-                name="country"
-                onChange={handleChange}
-                required
-                value={values.country}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <TextField
-                fullWidth
-                label="Select State"
-                name="state"
-                onChange={handleChange}
-                required
-                select
-                SelectProps={{ native: true }}
-                value={values.state}
-                variant="outlined"
-              >
-                {states.map((option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                  >
-                    {option.label}
-                  </option>
-                ))}
-              </TextField>
-            </Grid> */}
           </Grid>
         </CardContent>
         <Divider />

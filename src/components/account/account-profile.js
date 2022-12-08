@@ -3,7 +3,7 @@ import { Avatar, Box, Button, Card, CardActions, CardContent, Divider, Typograph
 import CameraAltTwoToneIcon from '@mui/icons-material/CameraAltTwoTone';
 import AccountProfileImageUpload from './account-profile-image-upload';
 
-export const AccountProfile = (props) => {
+export const AccountProfile = ({user, fetchUserData, triggerAlert}) => {
   const [imageUploadOpen, setImageUploadOpen] = React.useState(false);
   const handleClickOpen = () => {
     setImageUploadOpen(true);
@@ -12,19 +12,19 @@ export const AccountProfile = (props) => {
     <Card>
       <CardContent>
         <Box sx={{ alignItems: 'center', display: 'flex',flexDirection: 'column'}} >
-          <Avatar src={`data:image/jpeg;base64,${props.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
+          <Avatar src={`data:image/jpeg;base64,${user?.image}`} sx={{ height: 84, mb: 2, width: 84 }}/>
           <Typography color="textPrimary" gutterBottom variant="h5">
-            {props.user?.companyName === undefined ? 
+            {user?.companyName === undefined ? 
               ("") : 
-              (`${props.user?.companyName}`)
+              (`${user?.companyName}`)
             }
           </Typography>
           <IconButton color="primary" aria-label="edit" component="label" onClick={handleClickOpen}>
             <CameraAltTwoToneIcon sx={{ mb: 2}}/>
-            <AccountProfileImageUpload  open={imageUploadOpen} setOpen={setImageUploadOpen} />
+            <AccountProfileImageUpload  open={imageUploadOpen} setOpen={setImageUploadOpen} fetchUserData={fetchUserData} triggerAlert={triggerAlert}/>
           </IconButton>
           <Typography color="textSecondary" variant="body2" >
-            {`${props.user?.signerAddress} `}
+            {`${user?.signerAddress} `}
           </Typography>
         </Box>
       </CardContent>

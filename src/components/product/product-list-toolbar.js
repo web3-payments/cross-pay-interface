@@ -3,13 +3,13 @@ import { Box, Button, Card, CardContent, TextField, InputAdornment, SvgIcon,Typo
 import { Search as SearchIcon } from '../../icons/search';
 import ProductCreation from './product-creation';
 
-export const ProductListToolbar = (props) => {
+export const ProductListToolbar = ({fetchProducts, triggerAlert}) => {
   const [productCreationOpen, setProductCreationOpen] = React.useState(false);
   const handleClickOpen = () => {
     setProductCreationOpen(true);
   };
   return (
-    <Box {...props}>
+    <Box>
       <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', m: -1 }}>
         <Typography sx={{ m: 1 }} variant="h4" >
           Products
@@ -18,7 +18,7 @@ export const ProductListToolbar = (props) => {
           <Button onClick={handleClickOpen} color="primary" variant="contained" >
             Add products
           </Button>
-          <ProductCreation open={productCreationOpen} setOpen={setProductCreationOpen} />
+          <ProductCreation open={productCreationOpen} setOpen={setProductCreationOpen}  fetchProducts={fetchProducts} triggerAlert={triggerAlert}/>
         </Box>
       </Box>
       <Box sx={{ mt: 3 }}>

@@ -11,7 +11,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import PaymentModal from './payment-modal';
 
-export const PaymentLinkCreation = (props) => {
+export const PaymentLinkCreation = ({fetchPayments, triggerAlert, setOpen, open}) => {
   const userAddress = useSelector((state) => state.address);
   const toWei = (num, decimals) => ethers.utils.parseUnits(num.toString(), decimals.toString());
   const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
@@ -24,7 +24,7 @@ export const PaymentLinkCreation = (props) => {
     );
 
   const handleClose = () => {
-    props.setOpen(false);
+    setOpen(false);
     setPaymentDetails(paymentDetailsDefault);
   };
 
@@ -61,20 +61,21 @@ export const PaymentLinkCreation = (props) => {
     await axios
       .post(`${config.contextRoot}/payment`, paymentDetails)
       .then(function (response) {
-        console.log(response);
         if(response.status === 200){
-          console.log("Done")
+          console.log("Done");
+          fetchPayments();
+          triggerAlert("success", "Success", "Payment Link Created", null)
         }
       }).catch(function (error) {
           console.error(error)
+          triggerAlert("error", "Error", "Failed to create Payment Link", error.message)
       });
-
     handleClose();
   }
   
   return (
     <div>
-      <Dialog open={props.open} onClose={handleClose} maxWidth="xl">
+      <Dialog open={open} onClose={handleClose} maxWidth="xl">
         <DialogContent>
           <PaymentModal paymentDetails={paymentDetails} setPaymentDetails={setPaymentDetails} />
         </DialogContent>

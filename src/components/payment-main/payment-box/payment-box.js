@@ -10,22 +10,30 @@ import AlertAction from '../../utils/alert-actions/alert-actions';
 
 export const PaymentsBox = () => {
     const userAddress = useSelector((state) => state.address);
-    const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
-    const [alertOpen, setAlertOpen] = useState(true);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const triggerAlert = (severity, title, message, strongMessage) => {
+        setAlertOpen(true);
+        setAlert({severity: severity, title: title, message: message, strongMessage: strongMessage});
+    }
     const [payments, setPayments] = useState();
     useQuery(["getPayments"], 
       async() => 
-        await axios 
-          .get(`${config.contextRoot}/payment/findByUserAddress`, {params: {address: userAddress}})
-          .then((res) => setPayments(res.data)), 
+        fetchPayments, 
           { refetchOnWindowFocus: false}
       );
+
+    const fetchPayments = async() => {
+      await axios 
+          .get(`${config.contextRoot}/payment/findByUserAddress`, {params: {address: userAddress}})
+          .then((res) => setPayments(res.data))
+    }
+
     return (
         <Box component="main" sx={{ flexGrow: 1, py: 8}}>
           <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
-            <AlertAction severity="error" title="title" message="message" strongMessage="addtional" open={alertOpen} setOpen={setAlertOpen} />
-            <PaymentListToolbar />
+            {alertOpen && <AlertAction severity={alert.severity} title={alert.title} message={alert.message} strongMessage={alert.strongMessage} open={alertOpen} setOpen={setAlertOpen} />}
+            <PaymentListToolbar fetchPayments={fetchPayments} triggerAlert={triggerAlert}/>
             <Box sx={{ mt: 3 }}>
               <PaymentListResults payments={payments} />
             </Box>
