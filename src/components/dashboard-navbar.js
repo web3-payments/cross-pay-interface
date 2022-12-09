@@ -16,35 +16,10 @@ import { AccountPopover } from './account-popover';
 import { useSelector, useDispatch } from 'react-redux';
 import { userActions } from '../store/index';
 import { config } from "../config";
-import { getWalletProvider } from "../utils/ethereumWalletProvider";
-// ##
-// import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
-// import WalletConnect from "@walletconnect/web3-provider";
-// import Web3Modal from "web3modal";
+import { getWalletProvider } from "../utils/ethereum-wallet-provider";
 import { ethers } from 'ethers';
-// ##
 
 require('dotenv').config()
-
-// export const providerOptions = {
-//   coinbasewallet: {
-//     package: CoinbaseWalletSDK,
-//     options: {
-//       appName: "Web 3 Modal Demo",
-//       infuraId: process.env.REACT_APP_INFURA_KEY
-//     }
-//   },
-//   walletconnect: {
-//     package: WalletConnect,
-//     options: {
-//       infuraId: process.env.REACT_APP_INFURA_KEY
-//     }
-//   }
-// };
-
-// const web3Modal = new Web3Modal({
-//   providerOptions // required
-// });
 
 const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -139,12 +114,9 @@ export const DashboardNavbar = (props) => {
       library = new ethers.providers.Web3Provider(provider);
       accounts = await library.listAccounts();
       network = await library.getNetwork();
-      console.log("aqui1");
     } catch (error) {
       console.error(error);
     }
-
-    console.log("aqui2");
     setProvider(provider);
     setLibrary(library);
     setNetwork(network);

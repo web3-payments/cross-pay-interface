@@ -11,7 +11,7 @@ import * as React from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import PaymentLinkCreation from '../payment-create/payment-link';
 
-export const PaymentListToolbar = (props) => {
+export const PaymentListToolbar = ({fetchPayments, triggerAlert }) => {
   const [paymentLinkOpen, setPaymentLinkOpen] = React.useState(false);
   const handleClickOpen = () => {
     setPaymentLinkOpen(true);
@@ -26,7 +26,7 @@ export const PaymentListToolbar = (props) => {
           <Button onClick={handleClickOpen} color="primary" variant="contained">
             Create Payment Link
           </Button>
-          <PaymentLinkCreation open={paymentLinkOpen} setOpen={setPaymentLinkOpen} />
+          <PaymentLinkCreation open={paymentLinkOpen} setOpen={setPaymentLinkOpen} fetchPayments={fetchPayments} triggerAlert={triggerAlert}/>
         </Box>
       </Box>
       <Box sx={{ mt: 3 }}>

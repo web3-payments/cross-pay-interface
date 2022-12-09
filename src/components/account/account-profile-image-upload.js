@@ -9,12 +9,12 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import AccountProfileModal from './account-profile-modal';
 
-const AccountProfileImageUpload = (props) => {
+const AccountProfileImageUpload = ({open, setOpen, triggerAlert, fetchUserData}) => {
     const userAddress = useSelector((state) => state.address);
   
     const handleClose = () => {
       setFile();
-      props.setOpen(false);
+      setOpen(false);
     };
 
     const [file, setFile] = useState();
@@ -33,23 +33,25 @@ const AccountProfileImageUpload = (props) => {
             }).then(function (response) {
                 console.log(response);
                 if (response.status === 200) {
-                console.log("Done");
+                  triggerAlert("success", "Success", "Image Uploaded", null)
+                  fetchUserData();
                 }
             }).catch(function (error) {
                 console.error(error);
+                triggerAlert("error", "Error", "Failed to upload image", error.message)
             });
         handleClose();
       }
 
     return (
         <div>
-          <Dialog open={props.open} onClose={handleClose} maxWidth="sm">
+          <Dialog open={open} onClose={handleClose} maxWidth="sm">
             <DialogContent>
               <AccountProfileModal file={file} setFile={setFile} />
             </DialogContent>
             <DialogActions>
               <Button onClick={handleClose} color="error" variant="contained">Cancel</Button>
-              <Button onClick={uploadImage} color="primary" variant="contained" >Create</Button>
+              <Button onClick={uploadImage} color="primary" variant="contained" >Upload</Button>
             </DialogActions>
           </Dialog>
         </div>
