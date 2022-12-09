@@ -191,7 +191,6 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const addQuantity = (product) => {
         const currentAmount = paymentInfo.amount;
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
-        paymentInfo.products[index].item.totalSupply--;
         paymentInfo.products[index].quantity++;
         const cryptocurrencyDecimals = product.item.cryptocurrency.decimals;
         const totalAmount = toWei(currentAmount, cryptocurrencyDecimals).add(toWei(product.item.price, cryptocurrencyDecimals));
@@ -201,11 +200,14 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const removeQuantity = (product) => {
         const currentAmount = paymentInfo.amount;
         const index = paymentInfo.products.findIndex(prd => prd.item.id === product.item.id);
-        paymentInfo.products[index].item.totalSupply++;
         paymentInfo.products[index].quantity--;
         const cryptocurrencyDecimals = product.item.cryptocurrency.decimals;
         const totalAmount = toWei(currentAmount, cryptocurrencyDecimals).sub(toWei(product.item.price, cryptocurrencyDecimals));
         setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, cryptocurrencyDecimals) });
+    }
+    
+    const constainSupply = (product) => {
+        return (product.item.totalSupply - product.quantity) >= 1;
     }
 
     return (
@@ -259,7 +261,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                 <ListItemSecondaryAction>
                                                     {paymentInfo?.adjustableQuantity &&
                                                         <>
-                                                            <IconButton disabled={product.item?.totalSupply === 0 || mock} aria-label="plus" onClick={() => addQuantity(product)}>
+                                                            <IconButton disabled={!constainSupply(product) || mock} aria-label="plus" onClick={() => addQuantity(product)}>
                                                                 <AddRoundedIcon />
                                                             </IconButton>
                                                             <IconButton disabled={product.quantity === 1 || mock} aria-label="minus" onClick={() => removeQuantity(product)}>
