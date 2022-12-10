@@ -21,7 +21,6 @@ import {
     IconButton, TextField, FormControl, InputLabel, Select, MenuItem,
     List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction
 } from '@mui/material';
-import { PAYMENT_CONTRACT_ADDRESS } from '../../utils/constants/constants';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
 
@@ -47,7 +46,13 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             library = new ethers.providers.Web3Provider(provider);
             accounts = await library.listAccounts();
             network = await library.getNetwork();
+            if(network.chainId !== paymentInfo.cryptocurrency.network.chainId){
+                setIsLoading(false);
+                triggerAlert("error", "Error", "Invalid Network! Change your wallet network", `Correct: ${paymentInfo.cryptocurrency.network.name}`)
+                return;
+            }
         } catch (error) {
+            console.error(error)
             setIsLoading(false);
             triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
             return;
@@ -57,7 +62,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             const signer = await library.getSigner(address)
             // TODO: Create a util class to handle smart contract operations // paymentExecution 
             const paymentContract = new Contract(
-                PAYMENT_CONTRACT_ADDRESS,
+                paymentInfo.cryptocurrency.smartContract.address,
                 PaymentContract.abi,
                 signer
             );
@@ -67,6 +72,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                     transactionDetails = await paymentNativeToken(paymentContract, paymentInfo);    
                 } catch (error) {
                     setIsLoading(false);
+                    console.error(error)
                     triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
                     return;     
                 }
@@ -75,6 +81,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                     transactionDetails = await paymentERC20(paymentContract, paymentInfo, signer);
                 } catch (error) {
                     setIsLoading(false);
+                    console.error(error)
                     triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
                     return;
                 }
@@ -111,7 +118,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             ERC20.abi,
             signer
         );
-        const approvalTransaction = await ERC20Contract.approve(PAYMENT_CONTRACT_ADDRESS,
+        const approvalTransaction = await ERC20Contract.approve(paymentInfo.cryptocurrency.smartContract.address,
             toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
         console.log(`Approval Transaction Hash: ${approvalTransaction.hash}`);
         const approvalResult = await approvalTransaction.wait();
