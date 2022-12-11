@@ -1,5 +1,5 @@
-import { Box, Button, Container, Typography } from '@mui/material';
-import WalletIcon from '@mui/icons-material/Wallet';
+import { Box, Button, Container, Divider, Typography } from "@mui/material";
+import WalletIcon from "@mui/icons-material/Wallet";
 
 const LoggedOutPage = () => {
   return (
@@ -7,54 +7,28 @@ const LoggedOutPage = () => {
       <Box
         component="main"
         sx={{
-          alignItems: 'center',
-          display: 'flex',
+          alignItems: "center",
+          display: "flex",
           flexGrow: 1,
-          minHeight: '100%'
+          minHeight: "100%",
         }}
       >
         <Container maxWidth="md">
           <Box
             sx={{
-              alignItems: 'center',
-              display: 'flex',
-              flexDirection: 'column'
+              alignItems: "center",
+              display: "flex",
+              flexDirection: "column",
+              mt: 30,
             }}
           >
-            <Typography
-              align="center"
-              color="textPrimary"
-              variant="h1"
-            >
-              CrossPay: Connect your wallet
+            <Typography align="center" color="navy" variant="h2">
+              Powering the web3 payments layer
             </Typography>
-            <Typography
-              align="center"
-              color="textPrimary"
-              variant="subtitle2"
-            >
-              Connect your web3 wallet to start uring CrossPay services
+            <Typography mt={6} align="center" color="textPrimary" variant="h6">
+              The one place to enable web3 payments into your business. From
+              payment links and invoicing all the way to inventory management.
             </Typography>
-            <Box sx={{ textAlign: 'center' }}>
-              <img
-                alt="Under development"
-                src="/static/images/wallet-illo.svg"
-                style={{
-                  marginTop: 50,
-                  display: 'inline-block',
-                  maxWidth: '100%',
-                  width: 560
-                }}
-              />
-            </Box>
-              <Button
-                component="a"
-                startIcon={(<WalletIcon />)}
-                sx={{ mt: 3 }}
-                variant="contained"
-              >
-                Connect
-              </Button>
           </Box>
         </Container>
       </Box>
