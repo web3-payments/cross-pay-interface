@@ -25,7 +25,7 @@ export const ProductBox = () => {
 
     const fetchProducts = async() => {
       await axios 
-        .get(`${config.contextRoot}/user/${userAddress}/product`)
+        .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/product`)
         .then((res) => setProducts(res.data));
     }
 

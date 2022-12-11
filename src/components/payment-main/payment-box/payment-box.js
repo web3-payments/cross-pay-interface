@@ -25,7 +25,7 @@ export const PaymentsBox = () => {
 
     const fetchPayments = async() => {
       await axios 
-          .get(`${config.contextRoot}/payment/findByUserAddress`, {params: {address: userAddress}})
+          .get(process.env.REACT_APP_CONTEXT_ROOT+`/payment/findByUserAddress`, {params: {address: userAddress}})
           .then((res) => setPayments(res.data))
     }
 

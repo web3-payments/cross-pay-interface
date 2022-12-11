@@ -25,7 +25,7 @@ export const AccountBox = () => {
 
   const fetchUserData = async () => {
     await axios 
-        .get(`${config.contextRoot}/user/${userAddress}`)
+        .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}`)
         .then((res) => setUserData(res.data));
   }
 

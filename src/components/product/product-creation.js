@@ -41,7 +41,7 @@ const ProductCreation = ({ fetchProducts, triggerAlert, setOpen, open }) => {
     formData.append('cryptocurrencyId', productDetails.cryptocurrency.id);
     formData.append('image', file[0]);
     await axios
-      .post(`${config.contextRoot}/user/${userAddress}/product`, formData,
+      .post(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/product`, formData,
         {
           headers: {
             "Content-Type": "multipart/form-data"
@@ -59,7 +59,7 @@ const ProductCreation = ({ fetchProducts, triggerAlert, setOpen, open }) => {
 
   async function createProduct(productDetails, userAddress) {
     await axios
-      .post(`${config.contextRoot}/user/${userAddress}/product`, productDetails)
+      .post(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/product`, productDetails)
       .then(function (response) {
         if (response.status === 200) {
           fetchProducts();

@@ -24,7 +24,7 @@ export const PaymentListResults = ({ payments }) => {
   };
 
   const cancelPayment = async (hash) => {
-    await axios.post(`${config.contextRoot}/payment/${hash}/cancellation`);
+    await axios.post(process.env.REACT_APP_CONTEXT_ROOT+`/payment/${hash}/cancellation`);
   }
 
   //TODO: Move this to a utils class, it might ve used by other types of payments

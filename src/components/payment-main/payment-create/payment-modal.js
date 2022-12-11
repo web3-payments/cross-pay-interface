@@ -17,7 +17,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getUserData"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+                .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/wallet`)
                 .then((res) => setUserWallets(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -25,7 +25,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getProducts"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/product`)
+                .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/product`)
                 .then((res) => setProducts(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -34,7 +34,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getSupportedCryptos"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/cryptocurrency`)
+                .get(process.env.REACT_APP_CONTEXT_ROOT+`/cryptocurrency`)
                 .then((res) => setSupportedCryptocurrencies(res.data)),
         { refetchOnWindowFocus: false }
     );

@@ -25,7 +25,7 @@ export const WalletBox = () => {
 
   const fetchUserWallets = async () => {
     await axios 
-      .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+      .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}/wallet`)
       .then((res) => setUserWallets(res.data));
   }
 

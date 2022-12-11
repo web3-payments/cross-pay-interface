@@ -29,7 +29,7 @@ const PaymentPage = (props) => {
     ["getPaymentInfo", paymentHash],
     async () =>
       await axios
-        .get(`${config.contextRoot}/payment/${paymentHash}`)
+        .get(process.env.REACT_APP_CONTEXT_ROOT+`/payment/${paymentHash}`)
         .then((res) => setPaymentInfo(res.data)),
     { refetchOnWindowFocus: false }
   );

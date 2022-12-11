@@ -166,7 +166,7 @@ export const DashboardNavbar = (props) => {
   
   const checkAndCreateUser = async (newUser) => {
     await axios
-      .get(`${config.contextRoot}/user/${newUser.signerAddress}`)
+      .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${newUser.signerAddress}`)
       .then(function (response) {
         console.log(response);
         if(response.status === 200){
@@ -184,7 +184,7 @@ export const DashboardNavbar = (props) => {
   
   const createUser = async (newUser) => {
     await axios
-      .post(`${config.contextRoot}/user`, newUser)
+      .post(process.env.REACT_APP_CONTEXT_ROOT+`/user`, newUser)
       .then(function (response) {
         console.log(response);
       })

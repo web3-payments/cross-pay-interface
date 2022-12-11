@@ -155,7 +155,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         paymentConfirmation.transactionDetails = transactionDetails;
         paymentConfirmation.amountPaid = paymentInfo.amount;
         paymentConfirmation.products = paymentInfo.products;
-        await axios.post(`${config.contextRoot}/payment/${paymentInfo.hash}/confirmation`, paymentConfirmation);
+        await axios.post(process.env.REACT_APP_CONTEXT_ROOT+`/payment/${paymentInfo.hash}/confirmation`, paymentConfirmation);
     }
 
     const isCustomerRequiredInfo = (customerRequiredInfo) => {

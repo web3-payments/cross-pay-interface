@@ -18,7 +18,7 @@ export const PaymentLinkCreation = ({fetchPayments, triggerAlert, setOpen, open}
   useQuery(["getUserData"], 
     async() => 
       await axios 
-        .get(`${config.contextRoot}/user/${userAddress}`)
+        .get(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}`)
         .then((res) => setPaymentDetails({...paymentDetails, ["user"]: res.data}) ), 
         { refetchOnWindowFocus: false}
     );
@@ -59,7 +59,7 @@ export const PaymentLinkCreation = ({fetchPayments, triggerAlert, setOpen, open}
     console.log(paymentDetails);
     paymentDetails.userAddress = userAddress;
     await axios
-      .post(`${config.contextRoot}/payment`, paymentDetails)
+      .post(process.env.REACT_APP_CONTEXT_ROOT+`/payment`, paymentDetails)
       .then(function (response) {
         if(response.status === 200){
           console.log("Done");

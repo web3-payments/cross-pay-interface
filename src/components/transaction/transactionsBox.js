@@ -13,7 +13,7 @@ export const TransactionsBox = ({paymentHash}) => {
   useQuery(["getTransactions"], 
     async() => 
       await axios 
-        .get(`${config.contextRoot}/payment/${paymentHash}/transaction`)
+        .get(process.env.REACT_APP_CONTEXT_ROOT+`/payment/${paymentHash}/transaction`)
         .then((res) => setTransactions(res.data)), 
         { refetchOnWindowFocus: false}
     );

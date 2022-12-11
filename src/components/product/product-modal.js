@@ -16,7 +16,7 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
     useQuery(["getSupportedCryptos"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/cryptocurrency`)
+                .get(process.env.REACT_APP_CONTEXT_ROOT+`/cryptocurrency`)
                 .then((res) => setSupportedCryptocurrencies(res.data)),
         { refetchOnWindowFocus: false }
     );

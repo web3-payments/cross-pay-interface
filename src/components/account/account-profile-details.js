@@ -20,7 +20,7 @@ export const AccountProfileDetails = ({user, updateUser, fetchUserData, triggerA
     event.preventDefault();
     updateUser(user);
     await axios
-      .put(`${config.contextRoot}/user/${user.signerAddress}`,user)
+      .put(process.env.REACT_APP_CONTEXT_ROOT+`/user/${user.signerAddress}`,user)
       .then(function (response) {
         if(response.status === 200){
           console.log("Done");

@@ -25,7 +25,7 @@ const AccountProfileImageUpload = ({open, setOpen, triggerAlert, fetchUserData})
         let formData = new FormData();
         formData.append('image', file[0]);
         await axios
-            .patch(`${config.contextRoot}/user/${userAddress}`, formData,
+            .patch(process.env.REACT_APP_CONTEXT_ROOT+`/user/${userAddress}`, formData,
             {
                 headers: {
                 "Content-Type": "multipart/form-data"

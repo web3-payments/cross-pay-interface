@@ -3,7 +3,7 @@ const {createProxyMiddleware} =  require("http-proxy-middleware");
 const {config} = require("../src/config");
 
 const proxy = {
-    target: config.serverUrl,
+    target: process.env.REACT_APP_AWS_URL,
     changeOrigin: true,
 };
 
