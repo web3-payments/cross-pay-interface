@@ -33,7 +33,7 @@ const AccountProfileImageUpload = ({open, setOpen, triggerAlert, fetchUserData})
             }).then(function (response) {
                 console.log(response);
                 if (response.status === 200) {
-                  triggerAlert("success", "Success", "Image Uploaded", null)
+                  triggerAlert("success", "Success", "Image Uploaded.", null)
                   fetchUserData();
                 }
             }).catch(function (error) {
