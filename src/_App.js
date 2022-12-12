@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/dashboard'
@@ -18,21 +19,33 @@ registerChartJs();
 const queryClient = new QueryClient();
 
 function App() {
+
+  // Add a request interceptor // test using vercel
+  axios.interceptors.request.use(
+    config => {
+        config.headers['Cache-Control'] = 'no-cache, no-store, max-age=0, must-revalidate';
+      return config
+    },
+    error => {
+      Promise.reject(error)
+    }
+  )
+
   return (
     <>
       <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
-            <Route path="/" element={<Dashboard />}/>
-            <Route path="/customers" element={<Customer />}/>
-            <Route path="/payments" element={<Payments />}/>
-            <Route path="/transactions/:paymentHash" element={<Transactions />}/>
-            <Route path="/products" element={<Products />}/>
-            <Route path="/accounts" element={<Accounts />}/>
-            <Route path="/wallets" element={<Wallets />}/>
-            <Route path="/settings" element={<Settings />}/>
-            <Route path="/error" element={<ErrorPage />}/>
-            <Route path="/crypto-payment/:paymentHash" element={<PaymentPage />}/>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/customers" element={<Customer />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/transactions/:paymentHash" element={<Transactions />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/accounts" element={<Accounts />} />
+            <Route path="/wallets" element={<Wallets />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/error" element={<ErrorPage />} />
+            <Route path="/crypto-payment/:paymentHash" element={<PaymentPage />} />
           </Routes>
         </Router>
       </QueryClientProvider>
