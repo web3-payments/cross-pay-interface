@@ -13,3 +13,4 @@ console.log(process.env.NODE_ENV);
 const config = process.env.NODE_ENV === "production" ? prod : dev;
 
 module.exports = { config };
+
