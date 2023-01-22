@@ -1,7 +1,13 @@
+import * as React from 'react';
 import { Box, Button, Card, CardContent, TextField, InputAdornment, SvgIcon, Typography } from '@mui/material';
 import { Search as SearchIcon } from '../../icons/search';
+import CustomerCreation from './customer-creation';
 
-export const CustomerListToolbar = (props) => {
+export const CustomerListToolbar = ({fetchCustomers, triggerAlert}) => {
+  const [customerCreationOpen, setCustomerCreationOpen] = React.useState(false);
+  const handleClickOpen = () => {
+    setCustomerCreationOpen(true);
+  };
   return (
     <>
     <Box>
@@ -10,9 +16,10 @@ export const CustomerListToolbar = (props) => {
           Customer
         </Typography>
         <Box sx={{ m: 1 }}>
-          <Button color="primary" variant="contained">
+          <Button onClick={handleClickOpen} color="primary" variant="contained" >
             Create Customer
           </Button>
+          <CustomerCreation open={customerCreationOpen} setOpen={setCustomerCreationOpen}  fetchCustomers={fetchCustomers} triggerAlert={triggerAlert}/>
         </Box>
       </Box>
       <Box sx={{ mt: 3 }}>
