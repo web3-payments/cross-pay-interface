@@ -365,9 +365,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                         value={paymentConfirmation?.customerInfo?.shippingAddress?.country || ''}
                                                         onChange={handleCustomerShippingInfo}
                                                     >
-                                                        {/* {wallets?.map((wallet) => ( */}
                                                         <MenuItem key={1} value={"portugal"}>Portugal</MenuItem>
-                                                        {/* ))} */}
                                                     </Select>
                                                 </FormControl>
                                             </Grid>

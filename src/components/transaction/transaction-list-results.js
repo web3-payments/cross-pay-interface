@@ -19,6 +19,7 @@ export const TransactionListResults = ({ transactions }) => {
   const [customerDetailsOpen, setCustomerDetailsOpen] = React.useState(false);
   const [productsDetailsOpen, seProductsDetailsOpen] = React.useState(false);
   const [transactionDetailsOpen, setTransactionDetailsOpen] = React.useState(false);
+  
   const handleLimitChange = (event) => {
     setLimit(event.target.value);
   };
