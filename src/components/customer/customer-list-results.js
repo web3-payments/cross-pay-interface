@@ -72,7 +72,7 @@ export const CustomerListResults = ({ customers }) => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {customer.email}
+                    {customer?.email}
                   </TableCell>
                   <TableCell>
                     {`${customer?.shippingAddress.city}, ${customer?.shippingAddress.state}, ${customer?.shippingAddress.country}`}

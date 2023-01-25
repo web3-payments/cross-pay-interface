@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/dashboard'
@@ -18,6 +19,16 @@ registerChartJs();
 const queryClient = new QueryClient();
 
 function App() {
+    // Add a request interceptor
+    axios.interceptors.request.use(
+      config => {
+
+        return config
+      },
+      error => {
+        Promise.reject(error)
+      }
+    )
   return (
     <>
       <QueryClientProvider client={queryClient}>

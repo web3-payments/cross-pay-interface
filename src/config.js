@@ -1,11 +1,11 @@
 const dev = {
-    serverUrl: "http://localhost:8080",
-    contextRoot: "/api/v1"
+    serverUrl:  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+    contextRoot: process.env.REACT_APP_API_CONTEXT_ROOT || '/api/v1'
 }
 
 const prod = {
-    serverUrl: "http://localhost:8080",
-    contextRoot: "/api/v1"
+    serverUrl: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+    contextRoot: process.env.REACT_APP_API_CONTEXT_ROOT || 'http://localhost:8080/api/v1'
 }
 
 console.log(process.env.NODE_ENV);
