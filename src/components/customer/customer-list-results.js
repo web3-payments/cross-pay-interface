@@ -81,7 +81,7 @@ export const CustomerListResults = ({ customers }) => {
                     {customer?.phoneNumber}
                   </TableCell>
                   <TableCell>
-                  {format(Date.parse(customer?.createdAt), 'dd/MM/yyyy')}
+                    {customer?.createdAt}
                   </TableCell>
                 </TableRow>
               ))}
