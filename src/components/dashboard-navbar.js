@@ -33,7 +33,7 @@ function SimpleDialog(props) {
   const { onClose, selectedValue, open } = props;
 
   const handleClose = () => {
-    onClose(selectedValue);
+    onClose(selectedValue); 
   };
 
   const handleListItemClick = (value) => {
