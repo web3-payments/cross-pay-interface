@@ -6,6 +6,7 @@ import * as ERC20 from "../../abis/ERC20/ERC20.json";
 import { config } from "../../config";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereum-wallet-provider";
+import { getSolanaWalletProvider } from "../../utils/solana-wallet-provider";
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import {
@@ -23,8 +24,14 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, LAMPORTS_PER_SOL, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
+import idl from '../../idl/cross_pay_solana.json';
+import * as anchor from "@project-serum/anchor";
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
+    const { SystemProgram, Keypair } = web3;
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState();
@@ -33,7 +40,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
     const triggerAlert = (severity, title, message, strongMessage) => {
         setAlertOpen(true);
-        setAlert({severity: severity, title: title, message: message, strongMessage: strongMessage});
+        setAlert({ severity: severity, title: title, message: message, strongMessage: strongMessage });
     }
     const pay = async () => {
         if (mock) {
@@ -46,7 +53,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             library = new ethers.providers.Web3Provider(provider);
             accounts = await library.listAccounts();
             network = await library.getNetwork();
-            if(network.chainId !== paymentInfo.cryptocurrency.network.chainId){
+            if (network.chainId !== paymentInfo.cryptocurrency.network.chainId) {
                 setIsLoading(false);
                 triggerAlert("error", "Error", "Invalid Network! Change your wallet network", `Correct: ${paymentInfo.cryptocurrency.network.name}`)
                 return;
@@ -69,12 +76,12 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             let transactionDetails;
             if (paymentInfo.cryptocurrency.nativeToken) {
                 try {
-                    transactionDetails = await paymentNativeToken(paymentContract, paymentInfo);    
+                    transactionDetails = await paymentNativeToken(paymentContract, paymentInfo);
                 } catch (error) {
                     setIsLoading(false);
                     console.error(error)
                     triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
-                    return;     
+                    return;
                 }
             } else {
                 try {
@@ -86,9 +93,69 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                     return;
                 }
             }
-             await callPaymentConfirmation(transactionDetails);
-             console.log("Payment confirmed");
+            await callPaymentConfirmation(transactionDetails);
+            console.log("Payment confirmed");
         }
+        setIsLoading(false);
+        triggerAlert("success", "Success", "Payment Executed!", null);
+    }
+
+    //TODO: refactor this 
+    // we must have one only method pay that can handle any blockchain payment. 
+    // we need to see the similarity from ethereum payment and solana to make it unique
+    const paySolana = async () => {
+        if (mock) {
+            return;
+        }
+        setIsLoading(true);
+        //PDAs
+        const [adminStateAccount, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("admin_state"),
+            ],
+            program.programId
+        );
+        const [feeAccountSigner, __] = anchor.web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("fee_account_signer"),
+            ],
+            program.programId
+        );
+
+        const [solFeeAccount, ___] = anchor.web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("sol_fee_account"),
+            feeAccountSigner.toBuffer(),
+            ],
+            program.programId
+        );
+
+        const programID = new PublicKey(idl.metadata.address);
+        const provider = getSolanaWalletProvider();
+        const program = new Program(idl, programID, provider);
+        let txn;
+        try {
+            txn = await program.rpc.payWithSol({
+              accounts: {
+                client: paymentInfo.creditAddress,
+                customer: provider.wallet.publicKey,
+                adminState: adminStateAccount.publicKey,
+                solFeeAccount: solFeeAccount.publicKey, 
+                feeAccountSigner: feeAccountSigner.publicKey, 
+                systemProgram: SystemProgram.programId,
+              },
+              args: {
+                amount: paymentInfo.amount * LAMPORTS_PER_SOL
+              },
+              signers: [feeAccountSigner]
+            });
+
+          } catch (err) {
+            console.log("Transaction error: ", err);
+          }
+        
+        console.log("Transaction: ", txn);
+        await sendAndConfirmTransaction(provider.connection, txn, [provider.wallet])
         setIsLoading(false);
         triggerAlert("success", "Success", "Payment Executed!", null);
     }
@@ -212,236 +279,245 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const totalAmount = toWei(currentAmount, cryptocurrencyDecimals).sub(toWei(product.item.price, cryptocurrencyDecimals));
         setPaymentInfo({ ...paymentInfo, ["amount"]: fromWei(totalAmount, cryptocurrencyDecimals) });
     }
-    
+
     const constainSupply = (product) => {
         return (product.item.totalSupply - product.quantity) >= 1;
     }
 
     return (
         <>
-        {isLoading ? (
-          <LoadingSpinner/>
-        ) : (
-        <Box
-            lg={8} md={6} xs={12}
-            display="block"
-            justifyContent="center"
-            alignItems="center"
-            margin="10px"
-            minHeight="10vh"
-            width={`${mock ? '70%' : '100%'} `}>
-            {alertOpen && <AlertAction severity={alert.severity} title={alert.title} message={alert.message} strongMessage={alert.strongMessage} open={alertOpen} setOpen={setAlertOpen}/>}
-            <Card>
-                <Box sx={{ m: 2, textTransform: 'uppercase' }} >
-                    <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }} />
-                    <Typography color="inherit" variant="h6">
-                        {paymentInfo?.user?.companyName}
-                    </Typography>
-                </Box>
-                {paymentInfo.paymentStatus === 'DEACTIVATED' &&
-                    <CardHeader title="Information" subheader="Link not valid anymore" />
-                }
-                {/* <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/> */}
-                <Divider />
-                <CardContent>
-                    <Grid container spacing={3}>
-                        <Grid container sx={{ flex: '1 1 auto' }}>
-                            <Grid item xs={12} lg={12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
-                                <Typography sx={{ p: 2 }} variant="overline">
-                                    Your Items
-                                </Typography>
-                                <List sx={{ textTransform: 'capitalize' }} dense={true}>
-                                    {paymentInfo?.products?.length > 0 &&
-                                        paymentInfo?.products.map((product) => (
-                                            <ListItem key={product.item.id} button>
-                                                <ListItemAvatar>
-                                                    <Avatar
-                                                        alt={product.item?.name}
-                                                        src={`data:image/jpeg;base64,${product.item?.image}`}
-                                                        variant="square"
-                                                    />
-                                                </ListItemAvatar>
-                                                <ListItemText
-                                                    primary={`${product.item?.name}`}
-                                                    secondary={`${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
-                                                />
-                                                <ListItemSecondaryAction>
-                                                    {paymentInfo?.adjustableQuantity &&
-                                                        <>
-                                                            <IconButton disabled={!constainSupply(product) || mock} aria-label="plus" onClick={() => addQuantity(product)}>
-                                                                <AddRoundedIcon />
-                                                            </IconButton>
-                                                            <IconButton disabled={product.quantity === 1 || mock} aria-label="minus" onClick={() => removeQuantity(product)}>
-                                                                <RemoveRoundedIcon />
-                                                            </IconButton>
-                                                        </>
-                                                    }
-                                                    <ListItemText secondary={`Quantity: ${product.quantity}`} />
-                                                </ListItemSecondaryAction>
-                                            </ListItem>
-                                        ))}
-                                </List>
-                                <Divider />
-                                {paymentInfo?.amount &&
-                                    <Grid item xs={12} lg={12} align="right">
-                                        <Typography sx={{ mt: 3, mr: '1%' }} variant="overline">
-                                            {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
+            {isLoading ? (
+                <LoadingSpinner />
+            ) : (
+                <Box
+                    lg={8} md={6} xs={12}
+                    display="block"
+                    justifyContent="center"
+                    alignItems="center"
+                    margin="10px"
+                    minHeight="10vh"
+                    width={`${mock ? '70%' : '100%'} `}>
+                    {alertOpen && <AlertAction severity={alert.severity} title={alert.title} message={alert.message} strongMessage={alert.strongMessage} open={alertOpen} setOpen={setAlertOpen} />}
+                    <Card>
+                        <Box sx={{ m: 2, textTransform: 'uppercase' }} >
+                            <Avatar src={`data:image/jpeg;base64,${paymentInfo.user?.image}`} sx={{ height: 84, mb: 2, width: 84 }} />
+                            <Typography color="inherit" variant="h6">
+                                {paymentInfo?.user?.companyName}
+                            </Typography>
+                        </Box>
+                        {paymentInfo.paymentStatus === 'DEACTIVATED' &&
+                            <CardHeader title="Information" subheader="Link not valid anymore" />
+                        }
+                        {/* <CardHeader subheader="Amount Due" title={paymentInfo?.amount + ` ` + paymentInfo?.cryptocurrency?.symbol}/> */}
+                        <Divider />
+                        <CardContent>
+                            <Grid container spacing={3}>
+                                <Grid container sx={{ flex: '1 1 auto' }}>
+                                    <Grid item xs={12} lg={12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                                        <Typography sx={{ p: 2 }} variant="overline">
+                                            Your Items
                                         </Typography>
+                                        <List sx={{ textTransform: 'capitalize' }} dense={true}>
+                                            {paymentInfo?.products?.length > 0 &&
+                                                paymentInfo?.products.map((product) => (
+                                                    <ListItem key={product.item.id} button>
+                                                        <ListItemAvatar>
+                                                            <Avatar
+                                                                alt={product.item?.name}
+                                                                src={`data:image/jpeg;base64,${product.item?.image}`}
+                                                                variant="square"
+                                                            />
+                                                        </ListItemAvatar>
+                                                        <ListItemText
+                                                            primary={`${product.item?.name}`}
+                                                            secondary={`${product.item?.price} ${product.item?.cryptocurrency.symbol}`}
+                                                        />
+                                                        <ListItemSecondaryAction>
+                                                            {paymentInfo?.adjustableQuantity &&
+                                                                <>
+                                                                    <IconButton disabled={!constainSupply(product) || mock} aria-label="plus" onClick={() => addQuantity(product)}>
+                                                                        <AddRoundedIcon />
+                                                                    </IconButton>
+                                                                    <IconButton disabled={product.quantity === 1 || mock} aria-label="minus" onClick={() => removeQuantity(product)}>
+                                                                        <RemoveRoundedIcon />
+                                                                    </IconButton>
+                                                                </>
+                                                            }
+                                                            <ListItemText secondary={`Quantity: ${product.quantity}`} />
+                                                        </ListItemSecondaryAction>
+                                                    </ListItem>
+                                                ))}
+                                        </List>
+                                        <Divider />
+                                        {paymentInfo?.amount &&
+                                            <Grid item xs={12} lg={12} align="right">
+                                                <Typography sx={{ mt: 3, mr: '1%' }} variant="overline">
+                                                    {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
+                                                </Typography>
+                                            </Grid>
+                                        }
                                     </Grid>
-                                }
-                            </Grid>
-                            {isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo) &&
-                                <Grid item xs={12} lg={12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
-                                    {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
-                                        <Grid container sx={{ m: 1 }}>
-                                            <Grid item xs={12} lg={12}>
-                                                <Typography sx={{ m: 1 }} variant="overline">
-                                                    Contact Information
-                                                </Typography>
-                                            </Grid>
-                                            {paymentInfo?.customerRequiredInfo.name &&
-                                                <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
-                                                    <FormControl fullWidth>
-                                                        <TextField
-                                                            id="outlined-number"
-                                                            label="Name"
-                                                            name="name"
-                                                            type="text"
-                                                            disabled={mock}
-                                                            value={paymentConfirmation?.customerInfo?.name || ''}
-                                                            onChange={handleCustomerInfo}
-                                                        />
-                                                    </FormControl>
+                                    {isCustomerRequiredInfo(paymentInfo?.customerRequiredInfo) &&
+                                        <Grid item xs={12} lg={12} sx={{ backgroundColor: 'neutral.50', display: 'top', flexDirection: 'column', position: 'relative' }} >
+                                            {(paymentInfo?.customerRequiredInfo.name || paymentInfo?.customerRequiredInfo.email || paymentInfo?.customerRequiredInfo.phoneNumber) &&
+                                                <Grid container sx={{ m: 1 }}>
+                                                    <Grid item xs={12} lg={12}>
+                                                        <Typography sx={{ m: 1 }} variant="overline">
+                                                            Contact Information
+                                                        </Typography>
+                                                    </Grid>
+                                                    {paymentInfo?.customerRequiredInfo.name &&
+                                                        <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
+                                                            <FormControl fullWidth>
+                                                                <TextField
+                                                                    id="outlined-number"
+                                                                    label="Name"
+                                                                    name="name"
+                                                                    type="text"
+                                                                    disabled={mock}
+                                                                    value={paymentConfirmation?.customerInfo?.name || ''}
+                                                                    onChange={handleCustomerInfo}
+                                                                />
+                                                            </FormControl>
+                                                        </Grid>
+                                                    }
+                                                    {paymentInfo?.customerRequiredInfo.email &&
+                                                        <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
+                                                            <FormControl fullWidth>
+                                                                <TextField
+                                                                    id="outlined-number"
+                                                                    label="Email"
+                                                                    name="email"
+                                                                    type="text"
+                                                                    disabled={mock}
+                                                                    value={paymentConfirmation?.customerInfo?.email || ''}
+                                                                    onChange={handleCustomerInfo}
+                                                                />
+                                                            </FormControl>
+                                                        </Grid>
+                                                    }
+                                                    {paymentInfo?.customerRequiredInfo.phoneNumber &&
+                                                        <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
+                                                            <FormControl fullWidth>
+                                                                <TextField
+                                                                    id="outlined-number"
+                                                                    label="Phone number"
+                                                                    type="text"
+                                                                    name="phoneNumber"
+                                                                    disabled={mock}
+                                                                    value={paymentConfirmation?.customerInfo?.phoneNumber || ''}
+                                                                    onChange={handleCustomerInfo}
+                                                                />
+                                                            </FormControl>
+                                                        </Grid>
+                                                    }
                                                 </Grid>
                                             }
-                                            {paymentInfo?.customerRequiredInfo.email &&
-                                                <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
-                                                    <FormControl fullWidth>
-                                                        <TextField
-                                                            id="outlined-number"
-                                                            label="Email"
-                                                            name="email"
-                                                            type="text"
-                                                            disabled={mock}
-                                                            value={paymentConfirmation?.customerInfo?.email || ''}
-                                                            onChange={handleCustomerInfo}
-                                                        />
-                                                    </FormControl>
+                                            {paymentInfo?.customerRequiredInfo.shippingAddress &&
+                                                <Grid container sx={{ m: 1 }}>
+                                                    <Grid item xs={12} lg={12}>
+                                                        <Typography sx={{ m: 1 }} variant="overline">
+                                                            Shipping Address
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
+                                                        <FormControl fullWidth >
+                                                            <InputLabel id="select-country-code">Select Country</InputLabel>
+                                                            <Select
+                                                                labelId="select-country-code"
+                                                                id="select-country-code"
+                                                                name="country"
+                                                                label="Country"
+                                                                disabled={mock}
+                                                                value={paymentConfirmation?.customerInfo?.shippingAddress?.country || ''}
+                                                                onChange={handleCustomerShippingInfo}
+                                                            >
+                                                                <MenuItem key={1} value={"portugal"}>Portugal</MenuItem>
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
+                                                        <FormControl fullWidth >
+                                                            <TextField
+                                                                id="outlined-number"
+                                                                label="Address Line 1"
+                                                                type="text"
+                                                                name="address"
+                                                                disabled={mock}
+                                                                value={paymentConfirmation?.customerInfo?.shippingAddress?.address || ''}
+                                                                onChange={handleCustomerShippingInfo}
+                                                            />
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid lg={7} item sx={{ m: 0.6 }}>
+                                                        <FormControl fullWidth >
+                                                            <TextField
+                                                                id="outlined-number"
+                                                                label="City"
+                                                                type="text"
+                                                                name="city"
+                                                                disabled={mock}
+                                                                value={paymentConfirmation?.customerInfo?.shippingAddress?.city || ''}
+                                                                onChange={handleCustomerShippingInfo}
+                                                            />
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid lg={4.6} item sx={{ m: 0.6 }}>
+                                                        <FormControl fullWidth >
+                                                            <TextField
+                                                                id="outlined-number"
+                                                                label="Zip code"
+                                                                type="text"
+                                                                name="zipCode"
+                                                                disabled={mock}
+                                                                value={paymentConfirmation?.customerInfo?.shippingAddress?.zipCode || ''}
+                                                                onChange={handleCustomerShippingInfo}
+                                                            />
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid lg={12} item sx={{ m: 0.6 }}>
+                                                        <FormControl fullWidth >
+                                                            <TextField
+                                                                id="outlined-number"
+                                                                label="State"
+                                                                type="text"
+                                                                name="state"
+                                                                disabled={mock}
+                                                                value={paymentConfirmation?.customerInfo?.shippingAddress?.state || ''}
+                                                                onChange={handleCustomerShippingInfo}
+                                                            />
+                                                        </FormControl>
+                                                    </Grid>
                                                 </Grid>
                                             }
-                                            {paymentInfo?.customerRequiredInfo.phoneNumber &&
-                                                <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
-                                                    <FormControl fullWidth>
-                                                        <TextField
-                                                            id="outlined-number"
-                                                            label="Phone number"
-                                                            type="text"
-                                                            name="phoneNumber"
-                                                            disabled={mock}
-                                                            value={paymentConfirmation?.customerInfo?.phoneNumber || ''}
-                                                            onChange={handleCustomerInfo}
-                                                        />
-                                                    </FormControl>
-                                                </Grid>
-                                            }
-                                        </Grid>
-                                    }
-                                    {paymentInfo?.customerRequiredInfo.shippingAddress &&
-                                        <Grid container sx={{ m: 1 }}>
-                                            <Grid item xs={12} lg={12}>
-                                                <Typography sx={{ m: 1 }} variant="overline">
-                                                    Shipping Address
-                                                </Typography>
-                                            </Grid>
-                                            <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
-                                                <FormControl fullWidth >
-                                                    <InputLabel id="select-country-code">Select Country</InputLabel>
-                                                    <Select
-                                                        labelId="select-country-code"
-                                                        id="select-country-code"
-                                                        name="country"
-                                                        label="Country"
-                                                        disabled={mock}
-                                                        value={paymentConfirmation?.customerInfo?.shippingAddress?.country || ''}
-                                                        onChange={handleCustomerShippingInfo}
-                                                    >
-                                                        <MenuItem key={1} value={"portugal"}>Portugal</MenuItem>
-                                                    </Select>
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid xs={12} lg={12} item sx={{ m: 0.6 }}>
-                                                <FormControl fullWidth >
-                                                    <TextField
-                                                        id="outlined-number"
-                                                        label="Address Line 1"
-                                                        type="text"
-                                                        name="address"
-                                                        disabled={mock}
-                                                        value={paymentConfirmation?.customerInfo?.shippingAddress?.address || ''}
-                                                        onChange={handleCustomerShippingInfo}
-                                                    />
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid lg={7} item sx={{ m: 0.6 }}>
-                                                <FormControl fullWidth >
-                                                    <TextField
-                                                        id="outlined-number"
-                                                        label="City"
-                                                        type="text"
-                                                        name="city"
-                                                        disabled={mock}
-                                                        value={paymentConfirmation?.customerInfo?.shippingAddress?.city || ''}
-                                                        onChange={handleCustomerShippingInfo}
-                                                    />
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid lg={4.6} item sx={{ m: 0.6 }}>
-                                                <FormControl fullWidth >
-                                                    <TextField
-                                                        id="outlined-number"
-                                                        label="Zip code"
-                                                        type="text"
-                                                        name="zipCode"
-                                                        disabled={mock}
-                                                        value={paymentConfirmation?.customerInfo?.shippingAddress?.zipCode || ''}
-                                                        onChange={handleCustomerShippingInfo}
-                                                    />
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid lg={12} item sx={{ m: 0.6 }}>
-                                                <FormControl fullWidth >
-                                                    <TextField
-                                                        id="outlined-number"
-                                                        label="State"
-                                                        type="text"
-                                                        name="state"
-                                                        disabled={mock}
-                                                        value={paymentConfirmation?.customerInfo?.shippingAddress?.state || ''}
-                                                        onChange={handleCustomerShippingInfo}
-                                                    />
-                                                </FormControl>
-                                            </Grid>
                                         </Grid>
                                     }
                                 </Grid>
-                            }
-                        </Grid>
-                    </Grid>
-                </CardContent>
-                <Divider />
-                <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
-                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
-                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
-                    </Button>
+                            </Grid>
+                        </CardContent>
+                        <Divider />
+                        <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
+                            {paymentInfo?.cryptocurrency?.symbol === 'SOL' ?
+                                (
+                                    <Button color="primary" variant="contained" onClick={paySolana} disabled={!isReadyToPay() && !mock}>
+                                        Pay {paymentInfo?.amount} SOL
+                                    </Button>
+
+                                ) :
+                                (
+                                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
+                                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
+                                    </Button>
+                                )}
+                        </Box>
+                        <Box sx={{ display: 'center', justifyContent: 'center', p: 1 }}>
+                            <Typography color="textSecondary" variant="overline"  >
+                                Powered by CrossPay Crypto
+                            </Typography>
+                        </Box>
+                    </Card>
                 </Box>
-                <Box sx={{ display: 'center', justifyContent: 'center', p: 1 }}>
-                    <Typography color="textSecondary" variant="overline"  >
-                        Powered by CrossPay Crypto
-                    </Typography>
-                </Box>
-            </Card>
-        </Box>
-        )}
+            )}
         </>
     );
 }
