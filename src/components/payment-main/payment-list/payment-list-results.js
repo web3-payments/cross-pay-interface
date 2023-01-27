@@ -86,7 +86,7 @@ export const PaymentListResults = ({ payments }) => {
                     {paymentStatusTag(payment.paymentStatus)}
                   </TableCell>
                   <TableCell>
-                    {format(Date.parse(payment.createdAt), 'dd/MM/yyyy')} 
+                    {payment.createdAt} 
                   </TableCell>
                   <TableCell>
                       <Tooltip title="Copy Payment Link">
