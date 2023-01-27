@@ -69,7 +69,7 @@ export const TransactionListResults = ({ transactions }) => {
                     </FormControl>
                   </TableCell>
                   <TableCell>
-                    {format(Date.parse(transaction?.executionDate), 'dd/MM/yyyy')} 
+                    {transaction?.executionDate} 
                   </TableCell>
                   <TableCell>
                     <a href={`${transaction.cryptocurrency.blockExplorer.transactionLink}/${transaction.transactionHash}`}>
