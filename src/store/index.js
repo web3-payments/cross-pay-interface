@@ -1,6 +1,10 @@
 import { createSlice, configureStore } from '@reduxjs/toolkit';
 
-const initialState = { address: localStorage.getItem("userAddress"), isConnected: !!localStorage.getItem("userAddress") };
+const initialState = { 
+    address: localStorage.getItem("userAddress"), 
+    isConnected: !!localStorage.getItem("userAddress"),
+    blockchain: localStorage.getItem("blockchain"),
+};
 
 const userSlice = createSlice({
     name: 'user',
@@ -8,7 +12,9 @@ const userSlice = createSlice({
     reducers: {
         userAccount(state, action){
             state.address = action.payload;
-
+        },
+        blockchain(state, action){
+            state.blockchain = action.payload;
         },
         connecion(state){
             state.isConnected = !state.isConnected;
