@@ -37,7 +37,6 @@ const SolanaWalletAdapterContext = ({ children }) => {
 
   const wallets = useMemo(
     () => [
-
       new PhantomWalletAdapter(),
       new SlopeWalletAdapter(),
       new SolflareWalletAdapter({ network }),

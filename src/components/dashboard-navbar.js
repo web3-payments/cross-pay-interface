@@ -22,7 +22,7 @@ import { getWalletProvider } from "../utils/ethereum-wallet-provider";
 import { ethers } from 'ethers';
 
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
+import {useConnection, useWallet } from '@solana/wallet-adapter-react';
 
 
 require('dotenv').config()
@@ -88,6 +88,7 @@ export const DashboardNavbar = (props) => {
 
   const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
   const { signMessage: solWalletSignMessage, publicKey, disconnect: disconnectSolWallet, connected, } = useWallet();
+  const { connection } = useConnection();
 
   React.useEffect(() => {
 
@@ -161,7 +162,7 @@ export const DashboardNavbar = (props) => {
           .catch((error) => {
             console.error(error)
           });
-        console.log(new Date().getTime())
+
         const newUser = {
           wallets: [
             {
@@ -194,12 +195,15 @@ export const DashboardNavbar = (props) => {
     setSelectedBlockchain("Solana")
     setOpenSolanaWalletDialog(true)
   }
+
+
   const completeSolanaWalletConnect = async () => {
-    // console.log(publicKey.toBase58());
     //sign 
-    const message = ["Log in CrossPay", userAddress];
+    const message = ["Log in CrossPay", publicKey.toBase58()];
     const encodedMessage = new TextEncoder().encode(message);
-    const signature = await solWalletSignMessage(encodedMessage)
+    let signature = await solWalletSignMessage(encodedMessage)
+    signature = Buffer.from(signature).toString("hex")
+
 
     const newUser = {
       wallets: [
@@ -319,7 +323,7 @@ export const DashboardNavbar = (props) => {
                       connectEthereumWallet()
                       handleCloseConnectWalletMenu()
                     }}>
-                    Polygon
+                    Ethereum
                   </MenuItem>
 
                   <MenuItem
