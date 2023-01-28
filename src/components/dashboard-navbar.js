@@ -12,12 +12,18 @@ import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import MenuIcon from '@mui/icons-material/Menu';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import { AccountPopover } from './account-popover';
 import { useSelector, useDispatch } from 'react-redux';
 import { userActions } from '../store/index';
 import { config } from "../config";
 import { getWalletProvider } from "../utils/ethereum-wallet-provider";
 import { ethers } from 'ethers';
+
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import {useConnection, useWallet } from '@solana/wallet-adapter-react';
+
 
 require('dotenv').config()
 
@@ -73,11 +79,24 @@ SimpleDialog.propTypes = {
 
 
 export const DashboardNavbar = (props) => {
+
   //## redux stuff
   const dispatch = useDispatch();
   const userAddress = useSelector((state) => state.address);
   const isConnected = useSelector((state) => state.isConnected);
+  const blockchain = useSelector((state) => state.blockchain);
 
+  const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
+  const { signMessage: solWalletSignMessage, publicKey, disconnect: disconnectSolWallet, connected, } = useWallet();
+  const { connection } = useConnection();
+
+  React.useEffect(() => {
+
+    if (selectedBlockchain === "Solana" && connected) {
+      completeSolanaWalletConnect()
+
+    }
+  }, [publicKey])
 
   const { onSidebarOpen, ...other } = props;
   const settingsRef = useRef(null);
@@ -103,55 +122,112 @@ export const DashboardNavbar = (props) => {
   const [library, setLibrary] = useState();
   // const [account, setAccount] = useState();
   const [network, setNetwork] = useState();
+  const [selectedBlockchain, setSelectedBlockchain] = useState();
 
-  const connectWallet = async () => {
-    let provider;
-    let library;
-    let accounts;
-    let network;
-    try {
-      provider = await getWalletProvider().connect();
-      library = new ethers.providers.Web3Provider(provider);
-      accounts = await library.listAccounts();
-      network = await library.getNetwork();
-    } catch (error) {
-      console.error(error);
+
+  const [connectWalletAnchorEl, connectWalletSetAnchorEl] = React.useState(null);
+  const openConnectWalletMenu = Boolean(connectWalletAnchorEl);
+
+  const handleClickConnectWalletMenu = (event) => {
+    connectWalletSetAnchorEl(event.currentTarget);
+  };
+  const handleCloseConnectWalletMenu = () => {
+    connectWalletSetAnchorEl(null);
+  };
+
+  const connectEthereumWallet = async () => {
+    {
+      let provider;
+      let library;
+      let accounts;
+      let network;
+      try {
+        provider = await getWalletProvider().connect();
+        library = new ethers.providers.Web3Provider(provider);
+        accounts = await library.listAccounts();
+        network = await library.getNetwork();
+      } catch (error) {
+        console.error(error);
+      }
+      setProvider(provider);
+      setLibrary(library);
+      setNetwork(network);
+      setSelectedBlockchain("Ethereum")
+
+      console.log(network);
+
+      if (accounts) {
+        const address = accounts[0];
+        const signature = await signMessage(library)
+          .catch((error) => {
+            console.error(error)
+          });
+
+        const newUser = {
+          wallets: [
+            {
+              name: "Default Account",
+              blockchain: selectedBlockchain, // TODO: enable other login accounts, for now only Ethereum account
+              chainId: network.chainId,
+              address: address,
+              createdAt: new Date().getTime()
+            }
+          ],
+          signature: signature,
+          signerAddress: address
+        };
+        checkAndCreateUser(newUser).catch((error) => {
+          console.error(error)
+        })
+        dispatch(userActions.userAccount(address));
+        dispatch(userActions.connecion());
+        dispatch(userActions.blockchain("Ethereum"));
+        localStorage.setItem("userAddress", address);
+        localStorage.setItem("blockchain", "Ethereum");
+      }
+    };
+  }
+
+  const connectSolanaWallet = async () => {
+    if (connected) {
+      disconnectSolWallet()
     }
-    setProvider(provider);
-    setLibrary(library);
-    setNetwork(network);
+    setSelectedBlockchain("Solana")
+    setOpenSolanaWalletDialog(true)
+  }
 
-    console.log(network);
 
-    if (accounts) {
-      const address = accounts[0];
-      const signature = await signMessage(library)
-      .catch((error) => {
-        console.error(error)
-      });
-      console.log(new Date().getTime())
-      const newUser = {
-        wallets: [
-          {
-            name: "Default Account",
-            blockchain: "Ethereum", // TODO: enable other login accounts, for now only Ethereum account
-            chainId: network.chainId, 
-            address: address,
-            createdAt: new Date().getTime()
-          }
-        ],
-        signature: signature,
-        signerAddress: address
-      };
-      checkAndCreateUser(newUser).catch((error) => {
-        console.error(error)
-      })
-      dispatch(userActions.userAccount(address));
-      dispatch(userActions.connecion());
-      localStorage.setItem("userAddress", address);
-    }
-  }; 
+  const completeSolanaWalletConnect = async () => {
+    //sign 
+    const message = ["Log in CrossPay", publicKey.toBase58()];
+    const encodedMessage = new TextEncoder().encode(message);
+    let signature = await solWalletSignMessage(encodedMessage)
+    signature = Buffer.from(signature).toString("hex")
 
+
+    const newUser = {
+      wallets: [
+        {
+          name: "Default Account",
+          blockchain: selectedBlockchain,
+          chainId: process.env.REACT_APP_CLUSTER,
+          address: publicKey.toBase58(),
+          createdAt: new Date().getTime()
+        }
+      ],
+      signature: signature,
+      signerAddress: publicKey.toBase58()
+    };
+    checkAndCreateUser(newUser).catch((error) => {
+      console.error(error)
+    })
+    dispatch(userActions.userAccount(publicKey.toBase58()));
+    dispatch(userActions.connecion());
+    dispatch(userActions.blockchain("Solana"));
+    localStorage.setItem("userAddress", publicKey.toBase58());
+    localStorage.setItem("blockchain", "Solana");
+    setSelectedBlockchain("")
+  }
   const signMessage = async (library) => {
     try {
       const signature = await library.provider.request({
@@ -163,25 +239,25 @@ export const DashboardNavbar = (props) => {
       console.log(error);
     }
   };
-  
+
   const checkAndCreateUser = async (newUser) => {
     await axios
       .get(`${config.contextRoot}/user/${newUser.signerAddress}`)
       .then(function (response) {
         console.log(response);
-        if(response.status === 200){
+        if (response.status === 200) {
           console.log("User already register")
           return;
         }
       }).catch(function (error) {
-        if(error.response.status === 404){
+        if (error.response.status === 404) {
           createUser(newUser).catch((error) => {
             console.error(error)
           })
         }
       });
   }
-  
+
   const createUser = async (newUser) => {
     await axios
       .post(`${config.contextRoot}/user`, newUser)
@@ -194,7 +270,11 @@ export const DashboardNavbar = (props) => {
   }
 
   const disconnect = async () => {
-    await getWalletProvider().clearCachedProvider();
+    if (blockchain === "Ethereum") {
+      await getWalletProvider().clearCachedProvider();
+    } else if (blockchain === "Solana") {
+      await disconnectSolWallet()
+    }
     localStorage.clear();
     dispatch(userActions.connecion());
     refreshState();
@@ -220,9 +300,42 @@ export const DashboardNavbar = (props) => {
           <Box sx={{ flexGrow: 1 }} />
           <>
             {!isConnected ? (
-              <Button variant="outlined" onClick={connectWallet}>
-                Connect Wallet
-              </Button>) : (
+              <div>
+                <Button
+                  variant="outlined"
+                  aria-controls={openConnectWalletMenu ? 'basic-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={openConnectWalletMenu ? 'true' : undefined}
+                  onClick={handleClickConnectWalletMenu}>
+                  Connect Wallet
+                </Button>
+                <Menu
+                  id="basic-menu"
+                  anchorEl={connectWalletAnchorEl}
+                  open={openConnectWalletMenu}
+                  onClose={handleCloseConnectWalletMenu}
+                  MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                  }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      connectEthereumWallet()
+                      handleCloseConnectWalletMenu()
+                    }}>
+                    Ethereum
+                  </MenuItem>
+
+                  <MenuItem
+                    onClick={() => {
+                      connectSolanaWallet()
+                      handleCloseConnectWalletMenu()
+                    }}>
+                    Solana
+                  </MenuItem>
+                </Menu>
+              </div>
+            ) : (
               <Button variant="outlined" color='success'
                 onClick={() => setOpenAccountPopover(true)}
                 ref={settingsRef}
