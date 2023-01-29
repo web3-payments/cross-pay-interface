@@ -9,16 +9,10 @@ import { Provider } from 'react-redux';
 import store from './store/index';
 import { clusterApiUrl } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-
 import { LedgerWalletAdapter, PhantomWalletAdapter, SlopeWalletAdapter, SolflareWalletAdapter, TorusWalletAdapter, UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
-
-import {
-  WalletModalProvider,
-} from '@solana/wallet-adapter-react-ui';
+import { WalletModalProvider} from '@solana/wallet-adapter-react-ui';
 
 require('@solana/wallet-adapter-react-ui/styles.css');
-
-
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 
@@ -78,7 +72,4 @@ root.render(
   </ThemeProvider>
 )
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals()
