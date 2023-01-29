@@ -2,7 +2,6 @@ import { Box, Container } from '@mui/material';
 import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
 import { useState } from 'react';
-import { config } from "../../../config";
 import axios from "axios";
 import PaymentListToolbar from '../payment-list/payment-list-toolbar';
 import PaymentListResults from '../payment-list/payment-list-results';
@@ -25,7 +24,7 @@ export const PaymentsBox = () => {
 
     const fetchPayments = async() => {
       await axios 
-          .get(`${config.contextRoot}/payment/findByUserAddress`, {params: {address: userAddress}})
+          .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/payment/findByUserAddress`, {params: {address: userAddress}})
           .then((res) => setPayments(res.data))
     }
 
