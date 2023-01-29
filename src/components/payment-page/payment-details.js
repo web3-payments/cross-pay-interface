@@ -5,7 +5,6 @@ import * as PaymentContract from "../../abis/payment/PaymentContract.json";
 import * as ERC20 from "../../abis/ERC20/ERC20.json";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereum-wallet-provider";
-import { getSolanaWalletProvider } from "../../utils/solana-wallet-provider";
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import {
@@ -23,14 +22,18 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
+import {useAnchorWallet, useConnection, WalletProvider, ConnectionProvider} from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, LAMPORTS_PER_SOL, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
 import idl from '../../idl/cross_pay_solana.json';
-import * as anchor from "@project-serum/anchor";
+import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
+import { async } from 'q';
+import { Provider } from 'web3modal';
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
-    const { SystemProgram, Keypair } = web3;
+    const opts = {preflightCommitment: "processed"}
+    const { connection } = useConnection();
+    const wallet = useAnchorWallet();
+    //const { SystemProgram } = web3;
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState();
@@ -97,7 +100,16 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         }
         setIsLoading(false);
         triggerAlert("success", "Success", "Payment Executed!", null);
-    }
+    }   
+    const getSolanaWalletProvider = async() => {
+        if(!wallet){
+            return null;
+        }
+        const provider = new SolanaProvider(
+            connection, wallet, opts.preflightCommitment,
+          );
+        return provider;
+    } 
 
     //TODO: refactor this 
     // we must have one only method pay that can handle any blockchain payment. 
@@ -107,41 +119,31 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             return;
         }
         setIsLoading(true);
+        const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
+        if (paymentInfo.cryptocurrency.nativeToken) {
+            paySolanaNativeToken(programID, paymentInfo);
+        } else {
+        }
+        
+    }
+
+    async function paySolanaNativeToken(contractID, paymentInfo){
         //PDAs
-        const [adminStateAccount, _] = anchor.web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("admin_state"),
-            ],
-            program.programId
-        );
-        const [feeAccountSigner, __] = anchor.web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("fee_account_signer"),
-            ],
-            program.programId
-        );
-
-        const [solFeeAccount, ___] = anchor.web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("sol_fee_account"),
-            feeAccountSigner.toBuffer(),
-            ],
-            program.programId
-        );
-
-        const programID = new PublicKey(idl.metadata.address);
+        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync([Buffer.from("admin_state"),],contractID);
+        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync([Buffer.from("fee_account_signer"),],contractID);
+        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync([Buffer.from("sol_fee_account"),feeAccountSigner.toBuffer(),],contractID);
         const provider = getSolanaWalletProvider();
-        const program = new Program(idl, programID, provider);
+        const program = new Program(idl, contractID, provider);
         let txn;
         try {
             txn = await program.rpc.payWithSol({
               accounts: {
-                client: paymentInfo.creditAddress,
-                customer: provider.wallet.publicKey,
-                adminState: adminStateAccount.publicKey,
-                solFeeAccount: solFeeAccount.publicKey, 
-                feeAccountSigner: feeAccountSigner.publicKey, 
-                systemProgram: SystemProgram.programId,
+                client: new PublicKey(paymentInfo.creditAddress),
+                customer: wallet.publicKey,
+                adminState: adminStateAccount,
+                solFeeAccount: solFeeAccount, 
+                feeAccountSigner: feeAccountSigner, 
+                systemProgram: contractID,
               },
               args: {
                 amount: paymentInfo.amount * LAMPORTS_PER_SOL
@@ -152,11 +154,13 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
           } catch (err) {
             console.log("Transaction error: ", err);
           }
-        
+        if(txn === undefined){
+            setIsLoading(false);
+            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+            return;
+        }
         console.log("Transaction: ", txn);
         await sendAndConfirmTransaction(provider.connection, txn, [provider.wallet])
-        setIsLoading(false);
-        triggerAlert("success", "Success", "Payment Executed!", null);
     }
 
     async function paymentNativeToken(paymentContract, paymentInfo) {
