@@ -2,7 +2,6 @@ import { Box, Container, Grid, Typography } from '@mui/material';
 import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
 import { useState } from 'react';
-import { config } from "../../config";
 import axios from "axios";
 import AlertAction from '../utils/alert-actions/alert-actions';
 import { AccountProfile } from './account-profile';
@@ -25,7 +24,7 @@ export const AccountBox = () => {
 
   const fetchUserData = async () => {
     await axios 
-        .get(`${config.contextRoot}/user/${userAddress}`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}`)
         .then((res) => setUserData(res.data));
   }
 

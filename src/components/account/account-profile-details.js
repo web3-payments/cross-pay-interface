@@ -8,7 +8,6 @@ import {
   Grid,
   TextField,
 } from "@mui/material";
-import { config } from "../../config";
 import axios from "axios";
 
 export const AccountProfileDetails = ({user, updateUser, fetchUserData, triggerAlert}) => {
@@ -20,7 +19,7 @@ export const AccountProfileDetails = ({user, updateUser, fetchUserData, triggerA
     event.preventDefault();
     updateUser(user);
     await axios
-      .put(`${config.contextRoot}/user/${user.signerAddress}`,user)
+      .put(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${user.signerAddress}`,user)
       .then(function (response) {
         if(response.status === 200){
           console.log("Done");

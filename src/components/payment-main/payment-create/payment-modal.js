@@ -8,7 +8,6 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import PaymentDetails from '../../payment-page/payment-details';
 import { useSelector } from 'react-redux';
 import { useQuery } from 'react-query';
-import { config } from "../../../config";
 import axios from "axios";
 
 const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
@@ -17,7 +16,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getUserData"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/wallet`)
                 .then((res) => setUserWallets(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -25,7 +24,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getProducts"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/product`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/product`)
                 .then((res) => setProducts(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -34,7 +33,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     useQuery(["getSupportedCryptos"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/cryptocurrency`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/cryptocurrency`)
                 .then((res) => setSupportedCryptocurrencies(res.data)),
         { refetchOnWindowFocus: false }
     );

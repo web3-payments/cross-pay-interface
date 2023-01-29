@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
-import { config } from "../../config";
 import axios from "axios";
 import { Box, Container } from '@mui/material';
 import { CustomerListResults } from './customer-list-results';
@@ -27,7 +26,7 @@ export const CustomerBox = () => {
 
     const fetchCustomers = async() => {
       await axios 
-        .get(`${config.contextRoot}/user/${userAddress}/customer`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/customer`)
         .then((res) => setCustomers(res.data));
     }
 

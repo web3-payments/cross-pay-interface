@@ -2,7 +2,6 @@ import { Box, Container, Grid, Typography } from '@mui/material';
 import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
 import { useState } from 'react';
-import { config } from "../../config";
 import axios from "axios";
 import AlertAction from '../utils/alert-actions/alert-actions';
 import WalletListToolbar from './wallet-list-toolbar';
@@ -25,7 +24,7 @@ export const WalletBox = () => {
 
   const fetchUserWallets = async () => {
     await axios 
-      .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+      .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/wallet`)
       .then((res) => setUserWallets(res.data));
   }
 

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { config } from "../../config";
 import axios from "axios";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -25,7 +24,7 @@ const AccountProfileImageUpload = ({open, setOpen, triggerAlert, fetchUserData})
         let formData = new FormData();
         formData.append('image', file[0]);
         await axios
-            .patch(`${config.contextRoot}/user/${userAddress}`, formData,
+            .patch(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}`, formData,
             {
                 headers: {
                 "Content-Type": "multipart/form-data"

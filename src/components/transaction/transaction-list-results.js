@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import * as React from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import { config } from "../../config";
 import axios from "axios";
 import { format } from 'date-fns';
 import { FormControl, Chip, Box, Card, TextField, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton, Tooltip } from '@mui/material';
