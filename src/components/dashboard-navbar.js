@@ -4,13 +4,7 @@ import axios from "axios";
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { AppBar, Avatar, Badge, Box, IconButton, Toolbar, Tooltip } from '@mui/material';
-import DialogTitle from '@mui/material/DialogTitle';
-import Dialog from '@mui/material/Dialog';
 import Button from "@mui/material/Button";
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemText from '@mui/material/ListItemText';
 import MenuIcon from '@mui/icons-material/Menu';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -28,49 +22,6 @@ const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
 }));
 
 const supportedBlockchains = ["Ethereum", "Solana "];
-
-function SimpleDialog(props) {
-
-  const { onClose, selectedValue, open } = props;
-
-  const handleClose = () => {
-    onClose(selectedValue);
-  };
-
-  const handleListItemClick = (value) => {
-    onClose(value);
-    //connectWallet();
-  };
-
-  return (
-    <Dialog onClose={handleClose} open={open}>
-      <DialogTitle>Create Account or Log in</DialogTitle>
-      <List sx={{ pt: 0 }}>
-        {supportedBlockchains.map((blockchain) => (
-          <ListItem
-            button
-            onClick={() => handleListItemClick(blockchain)}
-            key={blockchain}
-          >
-            <ListItemAvatar>
-              {/* TODO: change avatar for icone image */}
-              <Avatar sx={{ width: 30, height: 50 }}
-                src="\static\images\chains\ethereum_logo.png">
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText primary={blockchain} />
-          </ListItem>
-        ))}
-      </List>
-    </Dialog>
-  );
-}
-
-SimpleDialog.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  open: PropTypes.bool.isRequired,
-  selectedValue: PropTypes.string.isRequired,
-};
 
 
 export const DashboardNavbar = (props) => {
@@ -101,16 +52,6 @@ export const DashboardNavbar = (props) => {
   const [selectedValue, setSelectedValue] = React.useState(
     supportedBlockchains[1]
   );
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = (value) => {
-    setOpen(false);
-    setSelectedValue(value);
-  };
-
 
   //Wallet connect
   const [provider, setProvider] = useState();
@@ -342,19 +283,6 @@ export const DashboardNavbar = (props) => {
               </Button>
             )}
           </>
-          {/* <Button variant="outlined" 
-            onClick={handleClickOpen}
-            sx={{
-              cursor: 'pointer',
-              ml: 1
-            }}>
-            Connect
-          </Button> 
-          <SimpleDialog
-            selectedValue={selectedValue}
-            open={open}
-            onClose={handleClose}
-          />*/}
         </Toolbar>
       </DashboardNavbarRoot>
       <AccountPopover
