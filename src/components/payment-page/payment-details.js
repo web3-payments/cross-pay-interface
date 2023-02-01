@@ -22,12 +22,10 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
-import {useAnchorWallet, useConnection, WalletProvider, ConnectionProvider} from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
+import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import idl from '../../idl/cross_pay_solana.json';
 import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
-import { async } from 'q';
-import { Provider } from 'web3modal';
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const opts = {preflightCommitment: "processed"}
@@ -111,6 +109,11 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         return provider;
     } 
 
+    
+    const swap = async () => {
+
+    }
+
     //TODO: refactor this 
     // we must have one only method pay that can handle any blockchain payment. 
     // we need to see the similarity from ethereum payment and solana to make it unique
@@ -120,37 +123,61 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         }
         setIsLoading(true);
         const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
+        let transactionDetails;
         if (paymentInfo.cryptocurrency.nativeToken) {
-            paySolanaNativeToken(programID, paymentInfo);
+            try {
+                transactionDetails = await paySolanaNativeToken(programID, paymentInfo);
+            } catch (error) {
+                setIsLoading(false);
+                console.error(error)
+                triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
+                return;
+            }
         } else {
+
         }
-        
+        await callPaymentConfirmation(transactionDetails);
+        console.log("Payment confirmed");
+        setIsLoading(false);
+        triggerAlert("success", "Success", "Payment Executed!", null);
     }
 
-    async function paySolanaNativeToken(contractID, paymentInfo){
+    async function paySolanaNativeToken(programId, paymentInfo){
         //PDAs
-        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync([Buffer.from("admin_state"),],contractID);
-        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync([Buffer.from("fee_account_signer"),],contractID);
-        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync([Buffer.from("sol_fee_account"),feeAccountSigner.toBuffer(),],contractID);
-        const provider = getSolanaWalletProvider();
-        const program = new Program(idl, contractID, provider);
+        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("admin_state"),
+            ],
+            programId
+        );
+        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("fee_account_signer"),
+            ],
+            programId
+        );
+
+        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("sol_fee_account"),
+            feeAccountSigner.toBuffer(),
+            ],
+            programId
+        );
+        const provider = await getSolanaWalletProvider();
+        const program = new Program(idl, programId, provider);
         let txn;
         try {
-            txn = await program.rpc.payWithSol({
-              accounts: {
-                client: new PublicKey(paymentInfo.creditAddress),
-                customer: wallet.publicKey,
-                adminState: adminStateAccount,
-                solFeeAccount: solFeeAccount, 
-                feeAccountSigner: feeAccountSigner, 
-                systemProgram: contractID,
-              },
-              args: {
-                amount: paymentInfo.amount * LAMPORTS_PER_SOL
-              },
-              signers: [feeAccountSigner]
-            });
-
+             txn = await program.methods
+                .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
+                .accounts({
+                    client: new PublicKey(paymentInfo.creditAddress),
+                    customer: wallet.publicKey,
+                    adminState: adminStateAccount,
+                    solFeeAccount: solFeeAccount, 
+                    feeAccountSigner: feeAccountSigner, 
+                })
+                .transaction();
           } catch (err) {
             console.log("Transaction error: ", err);
           }
@@ -159,8 +186,25 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
             return;
         }
-        console.log("Transaction: ", txn);
-        await sendAndConfirmTransaction(provider.connection, txn, [provider.wallet])
+        const lastestBlockHash = await connection.getLatestBlockhash();
+        txn.recentBlockhash = lastestBlockHash.blockhash;
+        txn.feePayer = wallet.publicKey;
+        txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        const estimatedFee = await txn.getEstimatedFee(connection);
+        const txnfinal = await window.solana.signAndSendTransaction(txn);
+        const transactionDetails = {
+            transactionHash: txnfinal.signature,
+            blockHash: lastestBlockHash.blockhash,
+            blockNumber: lastestBlockHash.lastValidBlockHeight,
+            gasUsed: estimatedFee,
+            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+            fromAddress: txnfinal.publicKey
+        };
+        return transactionDetails;
+    }
+
+    async function paySolanaToken(programId, paymentInfo){
+
     }
 
     async function paymentNativeToken(paymentContract, paymentInfo) {
@@ -503,7 +547,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                             {paymentInfo?.cryptocurrency?.symbol === 'SOL' ?
                                 (
                                     <Button color="primary" variant="contained" onClick={paySolana} disabled={!isReadyToPay() && !mock}>
-                                        Pay {paymentInfo?.amount} SOL
+                                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
                                     </Button>
 
                                 ) :
