@@ -2,7 +2,6 @@ import React from 'react'
 import { useState, useEffect, } from 'react';
 import { Contract, ethers } from "ethers";
 import * as PaymentContract from "../../abis/payment/PaymentContract.json";
-import * as ERC20 from "../../abis/ERC20/ERC20.json";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereum-wallet-provider";
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -22,10 +21,9 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
-import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import idl from '../../idl/cross_pay_solana.json';
-import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
+import { useAnchorWallet, useConnection, useWallet, } from '@solana/wallet-adapter-react';
+import { PublicKey, } from "@solana/web3.js";
+import { AnchorProvider as SolanaProvider, BN } from '@project-serum/anchor';
 import Autocomplete from '@mui/material/Autocomplete';
 import { styled } from '@mui/material/styles';
 
@@ -33,14 +31,11 @@ import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
 
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useConnection, useWallet, useAnchorWallet } from '@solana/wallet-adapter-react';
-import { AddressLookupTableAccount, PublicKey, SystemProgram, Transaction, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import * as anchor from '@project-serum/anchor'
 
 
-import BN from "bn.js"
 import { useJupiterApiContext } from "../../context/jupiter-api-context";
-import { fromUIAmount, getATA, getBalance, getOrCreateATA, toUIAmount } from '../../utils/solana-account-helpers';
+import { getBalance, paySolanaNativeToken, SOL_MINT, } from '../../utils/sol-transaction-helpers';
+import { fromWei, paymentERC20, payUsingEth, toWei } from '../../utils/eth-transaction-helpers';
 
 const Item = styled(Container)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -51,10 +46,8 @@ const Item = styled(Container)(({ theme }) => ({
 }));
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
-    const opts = {preflightCommitment: "processed"}
-    const { connection } = useConnection();
-    const wallet = useAnchorWallet();
-    //const { SystemProgram } = web3;
+    const opts = { preflightCommitment: "processed" }
+
 
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
@@ -65,9 +58,6 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const [possibleInputs, setPossibleInputs] = useState();
     const [selectedToken, setSelectedToken] = useState();
 
-    const toWei = (num, decimals) => ethers.utils.parseUnits(num.toString(), decimals.toString());
-    const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
-
 
     const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
     const { signMessage, publicKey, disconnect: disconnectSolWallet, connected, wallet } = useWallet();
@@ -75,12 +65,10 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const anchorWallet = useAnchorWallet();
     const { tokenMap, routeMap, tokenNameMap, loaded, api } = useJupiterApiContext();
 
-    //possible inputs -- in the case where the user needs to pay with another token
 
-    const SOL_MINT = "So11111111111111111111111111111111111111112";
     const swapAndPay = async (selected,) => {
         const EXPECTED_TOKEN_MINT = paymentInfo.cryptocurrency.nativeToken ? SOL_MINT : paymentInfo.cryptocurrency.address;
-        const provider = new anchor.AnchorProvider(connection, anchorWallet, anchor.AnchorProvider.defaultOptions())
+        const provider = await getSolanaWalletProvider()
 
         setIsLoading(true);
         try {
@@ -169,10 +157,6 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         }
     }, [publicKey, routeMap])
 
-    const setPossibleInputsMap = (map) => {
-
-        setPossibleInputs(map)
-    }
 
     const handleUpdateSelected = async (value) => {
         if (!value) return
@@ -181,31 +165,31 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const completePaymentOnSolana = async () => {
         setSelectedBlockchain("")
 
-        const provider = new anchor.AnchorProvider(connection, anchorWallet, anchor.AnchorProvider.defaultOptions())
+        const provider = await getSolanaWalletProvider()
 
         if (paymentInfo.cryptocurrency.nativeToken) {
 
             const userBalance = await getBalance(provider, true)
             if (userBalance < paymentInfo?.amount) {
                 triggerAlert("error", "Error", `you don't have enough ${paymentInfo?.cryptocurrency.symbol} to complete this payment `, `select another token to pay`)
-                setPossibleInputsMap(routeMap.get(SOL_MINT))
+                setPossibleInputs(routeMap.get(SOL_MINT))
                 return setHasEnoughTokens(false)
             }
             // user has enough of the primary native currency
-            //TODO: add williams code here and continue to make payment
-
+            //proceed to pay
+            paySolana()
         } else {
 
             const userBalance = await getBalance(provider, false, new PublicKey(paymentInfo.cryptocurrency.address))
 
             if (userBalance < paymentInfo.amount) {
-                setPossibleInputsMap(routeMap.get(paymentInfo.cryptocurrency.address))
+                setPossibleInputs(routeMap.get(paymentInfo.cryptocurrency.address))
                 triggerAlert("error", "Error", "Insufficient funds", `Select another payment method`)
                 return setHasEnoughTokens(false)
             }
             // user has enough of the primary currency
-            //TODO: add williams code here and continue to make payment
-            console.log("user has enough balance -- proceed to payment");
+            //proceed to pay
+            paySolana()
         }
         return
     }
@@ -213,7 +197,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
 
     const triggerAlert = (severity, title, message, strongMessage) => {
         setAlertOpen(true);
-        setAlert({  severity: severity, title: title, message: message, strongMessage: strongMessage  });
+        setAlert({ severity: severity, title: title, message: message, strongMessage: strongMessage });
     }
     const pay = async () => {
 
@@ -262,7 +246,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             let transactionDetails;
             if (paymentInfo.cryptocurrency.nativeToken) {
                 try {
-                    transactionDetails = await paymentNativeToken(paymentContract, paymentInfo);
+                    transactionDetails = await payUsingEth(paymentContract, paymentInfo);
                 } catch (error) {
                     setIsLoading(false);
                     console.error(error)
@@ -284,21 +268,19 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         }
         setIsLoading(false);
         triggerAlert("success", "Success", "Payment Executed!", null);
-    }   
-    const getSolanaWalletProvider = async() => {
-        if(!wallet){
+    }
+
+    const getSolanaWalletProvider = async () => {
+        if (!wallet) {
             return null;
         }
-        const provider = new SolanaProvider(
-            connection, wallet, opts.preflightCommitment,
-          );
+
+        const provider = new SolanaProvider(connection, anchorWallet, opts)
+
         return provider;
-    } 
-
-    
-    const swap = async () => {
-
     }
+
+
 
     //TODO: refactor this 
     // we must have one only method pay that can handle any blockchain payment. 
@@ -312,7 +294,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         let transactionDetails;
         if (paymentInfo.cryptocurrency.nativeToken) {
             try {
-                transactionDetails = await paySolanaNativeToken(programID, paymentInfo);
+                const provider = await getSolanaWalletProvider()
+                transactionDetails = await paySolanaNativeToken(provider, wallet, setIsLoading, triggerAlert, programID, paymentInfo);
             } catch (error) {
                 setIsLoading(false);
                 console.error(error)
@@ -328,117 +311,12 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         triggerAlert("success", "Success", "Payment Executed!", null);
     }
 
-    async function paySolanaNativeToken(programId, paymentInfo){
-        //PDAs
-        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("admin_state"),
-            ],
-            programId
-        );
-        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("fee_account_signer"),
-            ],
-            programId
-        );
 
-        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("sol_fee_account"),
-            feeAccountSigner.toBuffer(),
-            ],
-            programId
-        );
-        const provider = await getSolanaWalletProvider();
-        const program = new Program(idl, programId, provider);
-        let txn;
-        try {
-             txn = await program.methods
-                .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
-                .accounts({
-                    client: new PublicKey(paymentInfo.creditAddress),
-                    customer: wallet.publicKey,
-                    adminState: adminStateAccount,
-                    solFeeAccount: solFeeAccount, 
-                    feeAccountSigner: feeAccountSigner, 
-                })
-                .transaction();
-          } catch (err) {
-            console.log("Transaction error: ", err);
-          }
-        if(txn === undefined){
-            setIsLoading(false);
-            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
-            return;
-        }
-        const lastestBlockHash = await connection.getLatestBlockhash();
-        txn.recentBlockhash = lastestBlockHash.blockhash;
-        txn.feePayer = wallet.publicKey;
-        txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
-        const estimatedFee = await txn.getEstimatedFee(connection);
-        const txnfinal = await window.solana.signAndSendTransaction(txn);
-        const transactionDetails = {
-            transactionHash: txnfinal.signature,
-            blockHash: lastestBlockHash.blockhash,
-            blockNumber: lastestBlockHash.lastValidBlockHeight,
-            gasUsed: estimatedFee,
-            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
-            fromAddress: txnfinal.publicKey
-        };
-        return transactionDetails;
-    }
 
-    async function paySolanaToken(programId, paymentInfo){
+    async function paySolanaToken(programId, paymentInfo) {
 
     }
 
-    async function paymentNativeToken(paymentContract, paymentInfo) {
-        const transaction = await paymentContract.pay(paymentInfo.creditAddress, { value: ethers.utils.parseEther(paymentInfo.amount.toString()) }); // use the amount from the paymentInfo
-        console.log(`Payment Transaction Hash: ${transaction.hash}`);
-        const result = await transaction.wait();
-        console.log(result);
-        console.log("Payment Executed");
-        const transactionDetails = {
-            transactionHash: transaction.hash,
-            blockHash: result.blockHash,
-            blockNumber: result.blockNumber,
-            gasUsed: result.gasUsed.toString(),
-            toAddress: result.to,
-            fromAddress: result.from,
-            confirmations: result.confirmations
-        };
-        return transactionDetails;
-    }
-
-    async function paymentERC20(paymentContract, paymentInfo, signer) {
-        // TODO: Create a util class to handle smart contract operations // paymentExecution
-        const ERC20Contract = new Contract(
-            paymentInfo.cryptocurrency.address,
-            ERC20.abi,
-            signer
-        );
-        const approvalTransaction = await ERC20Contract.approve(paymentInfo.cryptocurrency.smartContract.address,
-            toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
-        console.log(`Approval Transaction Hash: ${approvalTransaction.hash}`);
-        const approvalResult = await approvalTransaction.wait();
-        console.log(approvalResult);
-        const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, paymentInfo.cryptocurrency.address, toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
-        console.log(`Payment Transaction Hash: ${transaction.hash}`);
-        const result = await transaction.wait();
-        console.log(result);
-        console.log("ERC20 Payment Executed");
-        const transactionDetails = {
-            transactionHash: transaction.hash,
-            blockHash: result.blockHash,
-            blockNumber: result.blockNumber,
-            gasUsed: result.gasUsed.toString(),
-            toAddress: result.to,
-            fromAddress: result.from,
-            confirmations: result.confirmations
-        };
-        return transactionDetails;
-    }
 
     const handleCustomerInfo = (event) => {
         setPaymentConfirmation({ ...paymentConfirmation, ["customerInfo"]: { ...paymentConfirmation.customerInfo, [event.target.name]: event.target.value } })

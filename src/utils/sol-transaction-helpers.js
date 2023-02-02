@@ -5,7 +5,10 @@ import { TokenInvalidOwnerError } from "@solana/spl-token";
 import { TokenAccountNotFoundError } from "@solana/spl-token";
 import { getAccount } from "@solana/spl-token";
 import { getAssociatedTokenAddress } from "@solana/spl-token"
-import { AddressLookupTableAccount, Transaction, TransactionMessage } from "@solana/web3.js";
+import { Program, web3, BN } from '@project-serum/anchor';
+import { AddressLookupTableAccount, Transaction, TransactionMessage, } from "@solana/web3.js";
+import idl from '../idl/cross_pay_solana.json';
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export const getOrCreateATA = async (provider, tokenMint) => {
     const userATA = await getAssociatedTokenAddress(
@@ -106,3 +109,64 @@ export const serializeVersionedTx = async (connection, versionedTx) => {
 
     return versionedTx.serialize()
 }
+
+export async function paySolanaNativeToken(provider, wallet, setIsLoading, triggerAlert, programId, paymentInfo) {
+    //PDAs
+    const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("admin_state"),
+        ],
+        programId
+    );
+    const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("fee_account_signer"),
+        ],
+        programId
+    );
+
+    const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("sol_fee_account"),
+            feeAccountSigner.toBuffer(),
+        ],
+        programId
+    );
+    const program = new Program(idl, programId, provider);
+    let txn;
+    try {
+        txn = await program.methods
+            .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
+            .accounts({
+                client: new PublicKey(paymentInfo.creditAddress),
+                customer: wallet.publicKey,
+                adminState: adminStateAccount,
+                solFeeAccount: solFeeAccount,
+                feeAccountSigner: feeAccountSigner,
+            })
+            .transaction();
+    } catch (err) {
+        console.log("Transaction error: ", err);
+    }
+    if (txn === undefined) {
+        setIsLoading(false);
+        triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+        return;
+    }
+    const lastestBlockHash = await provider.connection.getLatestBlockhash();
+    txn.recentBlockhash = lastestBlockHash.blockhash;
+    txn.feePayer = wallet.publicKey;
+    txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
+    const estimatedFee = await txn.getEstimatedFee(provider.connection);
+    const txnfinal = await window.solana.signAndSendTransaction(txn);
+    const transactionDetails = {
+        transactionHash: txnfinal.signature,
+        blockHash: lastestBlockHash.blockhash,
+        blockNumber: lastestBlockHash.lastValidBlockHeight,
+        gasUsed: estimatedFee,
+        toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+        fromAddress: txnfinal.publicKey
+    };
+    return transactionDetails;
+}
+export const SOL_MINT = "So11111111111111111111111111111111111111112";

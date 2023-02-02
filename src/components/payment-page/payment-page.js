@@ -11,9 +11,8 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { config } from "../../config";
 
-import { Box, Grid, Typography} from "@mui/material";
+
 import "./payment-page.css"
 import PaymentDetails from './payment-details';
 
