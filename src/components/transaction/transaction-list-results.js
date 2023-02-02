@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import * as React from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import { config } from "../../config";
 import axios from "axios";
 import { format } from 'date-fns';
 import { FormControl, Chip, Box, Card, TextField, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton, Tooltip } from '@mui/material';
@@ -69,7 +68,7 @@ export const TransactionListResults = ({ transactions }) => {
                     </FormControl>
                   </TableCell>
                   <TableCell>
-                    {format(Date.parse(transaction?.executionDate), 'dd/MM/yyyy')} 
+                    {transaction?.executionDate} 
                   </TableCell>
                   <TableCell>
                     <a href={`${transaction.cryptocurrency.blockExplorer.transactionLink}/${transaction.transactionHash}`}>

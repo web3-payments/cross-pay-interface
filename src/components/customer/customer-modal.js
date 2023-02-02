@@ -1,6 +1,5 @@
 import { Box, Grid, Card, CardContent, CardHeader, TextField, Divider, MenuItem, Select, FormControl, InputLabel} from '@mui/material';
 import { useQuery } from 'react-query';
-import { config } from "../../config";
 import axios from "axios";
 
 const CustomerModal = ({ customerDetails, setCustomerDetails}) => {

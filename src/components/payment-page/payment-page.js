@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { config } from "../../config";
 
+import { Box, Grid, Typography} from "@mui/material";
 import "./payment-page.css"
 import PaymentDetails from './payment-details';
 
@@ -23,7 +24,7 @@ const PaymentPage = (props) => {
     ["getPaymentInfo", paymentHash],
     async () =>
       await axios
-        .get(`${config.contextRoot}/payment/${paymentHash}`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/payment/${paymentHash}`)
         .then((res) => setPaymentInfo(res.data)),
     { refetchOnWindowFocus: false }
   );

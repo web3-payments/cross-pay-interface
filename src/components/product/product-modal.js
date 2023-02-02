@@ -2,7 +2,6 @@ import { Box, Grid, Card, CardContent, CardHeader, TextField, Divider, MenuItem,
 import FileUpload from 'react-material-file-upload';
 import { useState } from 'react';
 import { useQuery } from 'react-query';
-import { config } from "../../config";
 import axios from "axios";
 
 const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
@@ -16,7 +15,7 @@ const ProductModal = ({ productDetails, setProductDetails, file, setFile }) => {
     useQuery(["getSupportedCryptos"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/cryptocurrency`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/cryptocurrency`)
                 .then((res) => setSupportedCryptocurrencies(res.data)),
         { refetchOnWindowFocus: false }
     );

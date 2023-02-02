@@ -22,7 +22,6 @@ function App() {
     // Add a request interceptor
     axios.interceptors.request.use(
       config => {
-
         return config
       },
       error => {

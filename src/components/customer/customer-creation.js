@@ -2,7 +2,6 @@ import * as React from 'react';
 import CustomerModal from "./customer-modal";
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { config } from "../../config";
 import axios from "axios";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -27,7 +26,7 @@ const CustomerCreation = ({ fetchCustomers, triggerAlert, setOpen, open }) => {
 
   async function createCustomer(customerDetails, userAddress) {
     await axios
-      .post(`${config.contextRoot}/user/${userAddress}/customer`, customerDetails)
+      .post(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/customer`, customerDetails)
       .then(function (response) {
         if (response.status === 200) {
           fetchCustomers();
