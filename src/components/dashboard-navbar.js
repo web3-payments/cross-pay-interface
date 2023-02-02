@@ -77,6 +77,7 @@ export const DashboardNavbar = (props) => {
       let library;
       let accounts;
       let network;
+      let blockchain = "Ethereum";
       try {
         provider = await getWalletProvider().connect();
         library = new ethers.providers.Web3Provider(provider);
@@ -88,7 +89,7 @@ export const DashboardNavbar = (props) => {
       setProvider(provider);
       setLibrary(library);
       setNetwork(network);
-      setSelectedBlockchain("Ethereum")
+      setSelectedBlockchain(blockchain)
 
       console.log(network);
 
@@ -103,7 +104,7 @@ export const DashboardNavbar = (props) => {
           wallets: [
             {
               name: "Default Account",
-              blockchain: selectedBlockchain, // TODO: enable other login accounts, for now only Ethereum account
+              blockchain: blockchain, // TODO: enable other login accounts, for now only Ethereum account
               chainId: network.chainId,
               address: address,
               createdAt: new Date().getTime()
