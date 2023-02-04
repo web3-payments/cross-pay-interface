@@ -1,0 +1,25 @@
+/* .left {
+    padding: 20px;
+    float: left;
+    width: 50%;
+  }
+  
+  .right {
+    padding: 20px;
+    float: left;
+    width: 50%;
+  }
+
+  */
+  .footer {
+    text-align:left;
+    padding:10px;
+    margin-top:50px;
+  }
+  
+  /* Use a media query to add a break point at 800px: */
+ /* @media screen and (max-width: 800px) {
+    .left, .right {
+      width: 100%; 
+     }
+  }   */

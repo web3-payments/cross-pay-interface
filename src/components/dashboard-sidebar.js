@@ -6,6 +6,7 @@ import { User as UserIcon } from '../icons/user';
 import WalletIcon from '@mui/icons-material/Wallet';
 import { Users as UsersIcon } from '../icons/users';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import InvoiceIcon from '@mui/icons-material/Receipt';
 import { Logo } from './logo';
 import { NavItem } from './nav-item';
 
@@ -19,6 +20,11 @@ const items = [
     href: '/payments',
     icon: (<PaymentsIcon />),
     title: 'Payments Links'
+  },
+  {
+    href: '/invoices',
+    icon: (<InvoiceIcon />),
+    title: 'Invoices'
   },
   {
     href: '/customers',
