@@ -16,7 +16,7 @@ const ProductCreation = ({ fetchProducts, triggerAlert, setOpen, open }) => {
     setOpen(false);
   };
   const [productDetails, setProductDetails] = useState({
-    token: "ETH"
+    
   });
 
   const [file, setFile] = useState();
@@ -28,6 +28,7 @@ const ProductCreation = ({ fetchProducts, triggerAlert, setOpen, open }) => {
     } else {
       await createProduct(productDetails, userAddress)
     }
+    setProductDetails({});
     handleClose();
   }
 
