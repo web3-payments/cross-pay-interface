@@ -23,12 +23,15 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     const [products, setProducts] = useState([]);
     useQuery(["getProducts"],
         async () =>
-            await axios
-                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/product`)
-                .then((res) => setProducts(res.data)),
+          fetchProducts,
         { refetchOnWindowFocus: false }
     );
 
+    const fetchProducts = async() => {
+        await axios
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/product`)
+                .then((res) => setProducts(res.data))
+      }
     const [supportedCryptocurrencies, setSupportedCryptocurrencies] = useState();
     useQuery(["getSupportedCryptos"],
         async () =>
@@ -53,6 +56,27 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const [isFlexiPayment, setIsFlexiPayment] = useState(false);
+
+
+    const paymentDetailsDefault = {
+        companyName: '',
+        amount: '',
+        paymentType: 'PAYMENT_LINK',
+        products: [], 
+        adjstableQuantity: false, 
+        customerRequiredInfo: {
+          name: false,
+          email: false, 
+          phoneNumber: false, 
+          shippingAddress: false
+        }
+      }
+    const changePaymentType = () => {
+        console.log(paymentDetailsDefault)
+        setPaymentDetails(paymentDetailsDefault)
+        fetchProducts();
+        setIsFlexiPayment(!isFlexiPayment);
+    }
 
     const addProduct = () => {
         if (selectedQuantity > selectedProduct.totalSupply) {
@@ -144,7 +168,7 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
                                             name="paymentLinkType"
                                             value={isFlexiPayment}
                                             label="Payment Type"
-                                            onChange={() => setIsFlexiPayment(!isFlexiPayment)}
+                                            onChange={changePaymentType}
                                         >
                                             <MenuItem key={1} value={true}>Flexi Payment</MenuItem>
                                             <MenuItem key={2} value={false}>Products / Services</MenuItem>

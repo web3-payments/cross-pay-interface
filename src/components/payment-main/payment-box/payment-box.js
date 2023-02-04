@@ -6,8 +6,10 @@ import axios from "axios";
 import PaymentListToolbar from '../payment-list/payment-list-toolbar';
 import PaymentListResults from '../payment-list/payment-list-results';
 import AlertAction from '../../utils/alert-actions/alert-actions';
+import LoadingSpinner from '../../utils/loading-spinner/loading-spinner';
 
 export const PaymentsBox = () => {
+    const [isLoading, setIsLoading] = useState(false);
     const userAddress = useSelector((state) => state.address);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState(false);
@@ -23,9 +25,11 @@ export const PaymentsBox = () => {
       );
 
     const fetchPayments = async() => {
+      setIsLoading(true);
       await axios 
           .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/payment/findByUserAddress`, {params: {address: userAddress}})
           .then((res) => setPayments(res.data))
+      setIsLoading(false);
     }
 
     return (
@@ -34,7 +38,9 @@ export const PaymentsBox = () => {
             {alertOpen && <AlertAction severity={alert.severity} title={alert.title} message={alert.message} strongMessage={alert.strongMessage} open={alertOpen} setOpen={setAlertOpen} />}
             <PaymentListToolbar fetchPayments={fetchPayments} triggerAlert={triggerAlert}/>
             <Box sx={{ mt: 3 }}>
+              {isLoading ? (<LoadingSpinner />) : (
               <PaymentListResults payments={payments} triggerAlert={triggerAlert}/>
+              )}
             </Box>
           </Container>
         </Box>

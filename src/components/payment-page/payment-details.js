@@ -432,9 +432,9 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                             Your Items
                                         </Typography>
                                         <List sx={{ textTransform: 'capitalize' }} dense={true}>
-                                            {paymentInfo?.products?.length > 0 &&
+                                            {paymentInfo?.products.length > 0 &&
                                                 paymentInfo?.products.map((product) => (
-                                                    <ListItem key={product.item.id} button>
+                                                    <ListItem key={product.item.id}>
                                                         <ListItemAvatar>
                                                             <Avatar
                                                                 alt={product.item?.name}
@@ -463,7 +463,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                 ))}
                                         </List>
                                         <Divider />
-                                        {paymentInfo?.amount &&
+                                        {paymentInfo?.amount > 0 &&
                                             <Grid item xs={12} lg={12} align="right">
                                                 <Typography sx={{ mt: 3, mr: '1%' }} variant="overline">
                                                     {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
