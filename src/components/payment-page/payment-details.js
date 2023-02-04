@@ -22,17 +22,19 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
-import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import idl from '../../idl/cross_pay_solana.json';
 import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
-import { createAssociatedTokenAccount, getAssociatedTokenAddress } from "@solana/spl-token";
+import { getAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token";
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const opts = {preflightCommitment: "processed"}
     const { connection } = useConnection();
+    const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
     const wallet = useAnchorWallet();
-    //const { SystemProgram } = web3;
+    const { publicKey, sendTransaction, connected } = useWallet();
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState();
@@ -110,17 +112,15 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         return provider;
     } 
 
-    
-    const swap = async () => {
-
-    }
-
     //TODO: refactor this 
     // we must have one only method pay that can handle any blockchain payment. 
     // we need to see the similarity from ethereum payment and solana to make it unique
     const paySolana = async () => {
         if (mock) {
             return;
+        }
+        if(!connected){
+            await setOpenSolanaWalletDialog(true)
         }
         setIsLoading(true);
         const programId = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
@@ -159,7 +159,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             }
         } else {
             try {
-                transactionDetails = await paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner, solFeeAccount);
+                transactionDetails = await paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner);
             } catch (error) {
                 setIsLoading(false);
                 console.error(error)
@@ -211,52 +211,67 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         return transactionDetails;
     }
 
-    async function paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner, solFeeAccount){
-        console.log("paySolanaToken")
-        console.log("wallet", wallet);
+    async function paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner) {
+        const mintToken = new PublicKey(paymentInfo.cryptocurrency.address)
+        //const recipientAddress = new PublicKey("2RqrRYTKkr8SAfMYqrtZ9Bj8uUXw3Wde6UjjD4wj4iPH");
+        const recipientAddress = new PublicKey(paymentInfo.creditAddress);
+        // let transactionInstructions = [] // add all instructions here to approve only once
         //create associated token accounts
-        let customerATA = await createAssociatedTokenAccount(
-            connection,
-            wallet,
-            new PublicKey(paymentInfo.cryptocurrency.address),
-            wallet.publicKey
-        );
-        console.log("customerATA", customerATA)
-        let clientATA = await createAssociatedTokenAccount(
-            connection,
-            wallet,
-            new PublicKey(paymentInfo.cryptocurrency.address),
-            new PublicKey(paymentInfo.creditAddress)
-        );
-        console.log("clientATA", clientATA)
-        let tokenFeeAccount = await getAssociatedTokenAddress(PublicKey(paymentInfo.cryptocurrency.address), feeAccountSigner, true);
-        console.log("tokenFeeAccount", tokenFeeAccount)
-
-        let txn;
-        try {
-             txn = await program.methods
-               .payWithToken(new BN(paymentInfo.amount * paymentInfo.cryptocurrency.decimals))
-               .accounts({
-                    client: new PublicKey(paymentInfo.creditAddress),   
-                    customer: wallet.publicKey,
-                    tokenMint: new PublicKey(paymentInfo.cryptocurrency.address),
-                    clientTokenAccount: clientATA,
-                    customerTokenAccount: customerATA,
-                    tokenFeeAccount,
-                    feeAccountSigner: feeAccountSigner,
-                    adminState: adminStateAccount
-               })
-               .signers([wallet])
-               .rpc()
-          } catch (err) {
-            console.log("Transaction error: ", err);
-          }
-        if(txn === undefined){
+        let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, wallet.publicKey);
+        const fromTokenAccount = await getAccount(connection, associatedTokenFrom);
+        const associatedTokenTo = await getAssociatedTokenAddress(mintToken,recipientAddress);
+        if(!await connection.getAccountInfo(associatedTokenTo)){
+            console.log("need create associate account");
+            let transaction = new Transaction().add(
+                createAssociatedTokenAccountInstruction(
+                    publicKey,
+                    associatedTokenTo,
+                    recipientAddress,
+                    mintToken
+                )
+            );
+            const lastestBlockHash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = lastestBlockHash.blockhash;
+            transaction.feePayer = wallet.publicKey;
+            transaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+            console.log("transaction", transaction)
+            await window.solana.signAndSendTransaction(transaction)
+        };
+        const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
+        let paymentTransaction = await program.methods
+            .payWithToken(new BN(toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals).toString()))
+            .accounts({
+                client: recipientAddress,  
+                customer: wallet.publicKey,
+                tokenMint: mintToken, 
+                clientTokenAccount: associatedTokenTo,
+                customerTokenAccount: fromTokenAccount.address,
+                tokenFeeAccount: tokenFeeAccount, 
+                feeAccountSigner: feeAccountSigner,
+                adminState: adminStateAccount,
+            })
+            .transaction();
+        if(paymentTransaction === undefined){
             setIsLoading(false);
             triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
             return;
         }
-        console.log(txn);
+        const lastestBlockHash = await connection.getLatestBlockhash();
+        paymentTransaction.recentBlockhash = lastestBlockHash.blockhash;
+        paymentTransaction.feePayer = wallet.publicKey;
+        paymentTransaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        const estimatedFee = await paymentTransaction.getEstimatedFee(connection);
+        let txnFinal = await window.solana.signAndSendTransaction(paymentTransaction)
+        const transactionDetails = {
+            transactionHash: txnFinal.signature,
+            blockHash: lastestBlockHash.blockhash,
+            blockNumber: lastestBlockHash.lastValidBlockHeight,
+            gasUsed: estimatedFee,
+            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+            fromAddress: txnFinal.publicKey
+        };
+        console.log(transactionDetails);
+        return transactionDetails;
     }
 
     async function paymentNativeToken(paymentContract, paymentInfo) {
