@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/dashboard'
 import PaymentPage from './components/payment-page/payment-page'
+import InvoicePage from './components/invoice-page/invoice-page'
 import Customer from './pages/customers'
 import Payments from './pages/payments'
+import Invoices from './pages/invoices'
 import Products from './pages/products'
 import Accounts from './pages/accounts'
 import Settings from './pages/settings'
@@ -37,13 +39,15 @@ function App() {
             <Route path="/" element={<Dashboard />}/>
             <Route path="/customers" element={<Customer />}/>
             <Route path="/payments" element={<Payments />}/>
-            <Route path="/transactions/:paymentHash" element={<Transactions />}/>
+            <Route path="/invoices" element={<Invoices />}/>
+            <Route path="/transactions/:type/:paymentHash" element={<Transactions />}/>
             <Route path="/products" element={<Products />}/>
             <Route path="/accounts" element={<Accounts />}/>
             <Route path="/wallets" element={<Wallets />}/>
             <Route path="/settings" element={<Settings />}/>
             <Route path="/error" element={<ErrorPage />}/>
             <Route path="/crypto-payment/:paymentHash" element={<PaymentPage />}/>
+            <Route path="/crypto-invoice/:invoiceHash" element={<InvoicePage />}/>
           </Routes>
         </Router>
       </QueryClientProvider>

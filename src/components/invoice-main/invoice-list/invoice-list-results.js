@@ -10,7 +10,7 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import { useNavigate } from 'react-router-dom';
 import Tooltip from '@mui/material/Tooltip';
 
-export const PaymentListResults = ({ payments }) => {
+export const InvoiceListResults = ({ invoices }) => {
   const navigate = useNavigate();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -23,12 +23,12 @@ export const PaymentListResults = ({ payments }) => {
     setPage(newPage);
   };
 
-  const cancelPayment = async (hash) => {
-    await axios.post(`${config.contextRoot}/payment/${hash}/cancellation`);
+  const cancelInvoice = async (hash) => {
+    await axios.post(`${config.contextRoot}/invoice/${hash}/cancellation`);
   }
 
-  //TODO: Move this to a utils class, it might ve used by other types of payments
-  const paymentStatusTag = (param) => {
+  //TODO: Move this to a utils class, it might ve used by other types of invoices
+  const invoiceStatusTag = (param) => {
     switch(param) {
       case 'CREATED':
         return <Chip label={param} color='info'/>;
@@ -55,8 +55,8 @@ export const PaymentListResults = ({ payments }) => {
                 <TableCell  sx={{ width: 125, px: 2 }} size="small">
                   Total
                 </TableCell>
-                <TableCell  sx={{ width: 500 }}>
-                  Description
+                <TableCell  sx={{ width: 250 }}>
+                  Memo
                 </TableCell>
                 <TableCell>
                   Status
@@ -65,46 +65,60 @@ export const PaymentListResults = ({ payments }) => {
                   Creation date
                 </TableCell>
                 <TableCell>
+                  Due date
+                </TableCell>
+                <TableCell>
+                  Customer
+                </TableCell>
+                <TableCell>
                   Options
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {payments?.slice(0, limit).map((payment) => (
-                <TableRow hover key={payment.id}>
+              {invoices?.slice(0, limit).map((invoice) => (
+                <TableRow hover key={invoice.id}>
                   <TableCell>  
                     <FormControl fullWidth={false} sx={{ m: 1 }}>
-                      {`${payment.amount} ${payment.cryptocurrency.symbol}`}
+                      {`${invoice.amount} ${invoice.cryptocurrency.symbol}`}
                     </FormControl>
                   </TableCell>
                   <TableCell>
                     <FormControl>
-                      {payment.description}
+                      {invoice.memo}
                     </FormControl>
                   </TableCell>
                   <TableCell>
-                    {paymentStatusTag(payment.paymentStatus)}
+                    {invoiceStatusTag(invoice.invoiceStatus)}
                   </TableCell>
                   <TableCell>
-                    {payment.createdAt} 
+                    {format(Date.parse(invoice.createdAt), 'dd/MM/yyyy')} 
                   </TableCell>
                   <TableCell>
-                      <Tooltip title="Copy Payment Link">
+                    {format(Date.parse(invoice.dueDate), 'dd/MM/yyyy')} 
+                  </TableCell>
+                  <TableCell>
+                    <FormControl>
+                      {invoice.customer.name}
+                    </FormControl>
+                  </TableCell>
+                  <TableCell>
+                      <Tooltip title="Copy Invoice Link">
                         <IconButton color="primary" aria-label="edit" component="label"
-                          onClick={() => {navigator.clipboard.writeText(payment.paymentLink)}}>
+                          onClick={() => {navigator.clipboard.writeText(invoice.invoiceLink)}}>
                           <ContentCopyIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Transactions">
                         <IconButton color="primary" aria-label="transactions" component="label"
-                            onClick={() => navigate(`/transactions/payment/${payment.hash}`)}>
+                            onClick={() => navigate(`/transactions/invoice/${invoice.hash}`)}>
                             <ReceiptLongOutlinedIcon />
                         </IconButton>
                       </Tooltip>
-                      {payment.paymentStatus !== "CANCELLED" && payment.paymentStatus !== "PAID" && payment.paymentStatus !== "DEACTIVATED" && 
+                      {invoice.invoiceStatus !== "PAID" && invoice.invoiceStatus !== "DEACTIVATED" && 
                         <Tooltip title="Deactivate">
                             <IconButton color="primary" aria-label="cancel" component="label"
-                              onClick={() => {cancelPayment(payment.hash)}}>
+                              onClick={() => {cancelInvoice(invoice.hash)}}>
                               <BlockOutlinedIcon />
                             </IconButton>
                           </Tooltip>
@@ -118,7 +132,7 @@ export const PaymentListResults = ({ payments }) => {
       </PerfectScrollbar>
       <TablePagination
         component="div"
-        count={payments ? payments.length : 0}
+        count={invoices ? invoices.length : 0}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleLimitChange}
         page={page}
@@ -130,4 +144,4 @@ export const PaymentListResults = ({ payments }) => {
 };
 
 
-export default PaymentListResults;
+export default InvoiceListResults;
