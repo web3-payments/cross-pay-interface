@@ -432,7 +432,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                             Your Items
                                         </Typography>
                                         <List sx={{ textTransform: 'capitalize' }} dense={true}>
-                                            {paymentInfo?.products.length > 0 &&
+                                            {paymentInfo?.products?.length > 0 &&
                                                 paymentInfo?.products.map((product) => (
                                                     <ListItem key={product.item.id}>
                                                         <ListItemAvatar>
