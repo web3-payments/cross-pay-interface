@@ -34,7 +34,7 @@ export const PaymentsBox = () => {
             {alertOpen && <AlertAction severity={alert.severity} title={alert.title} message={alert.message} strongMessage={alert.strongMessage} open={alertOpen} setOpen={setAlertOpen} />}
             <PaymentListToolbar fetchPayments={fetchPayments} triggerAlert={triggerAlert}/>
             <Box sx={{ mt: 3 }}>
-              <PaymentListResults payments={payments} />
+              <PaymentListResults payments={payments} triggerAlert={triggerAlert}/>
             </Box>
           </Container>
         </Box>
