@@ -56,24 +56,12 @@ const PaymentModal = ({ paymentDetails, setPaymentDetails }) => {
     }
 
     const [isFlexiPayment, setIsFlexiPayment] = useState(false);
-
-
-    const paymentDetailsDefault = {
-        companyName: '',
-        amount: '',
-        paymentType: 'PAYMENT_LINK',
-        products: [], 
-        adjstableQuantity: false, 
-        customerRequiredInfo: {
-          name: false,
-          email: false, 
-          phoneNumber: false, 
-          shippingAddress: false
-        }
-      }
+    
     const changePaymentType = () => {
-        console.log(paymentDetailsDefault)
-        setPaymentDetails(paymentDetailsDefault)
+        let  paymentDetailsDefault = paymentDetails;
+        paymentDetailsDefault.amount = '';
+        paymentDetailsDefault.products = [];
+        setPaymentDetails(paymentDetailsDefault);
         fetchProducts();
         setIsFlexiPayment(!isFlexiPayment);
     }
