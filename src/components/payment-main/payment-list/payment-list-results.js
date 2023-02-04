@@ -93,10 +93,10 @@ export const PaymentListResults = ({ payments, triggerAlert}) => {
                           onClick={() => {
                               navigator.clipboard.writeText(payment.paymentLink)
                               .then(() => {
-                                triggerAlert("info", "Info","successfully copied to cipboard", payment.paymentLink);
+                                triggerAlert("info", "Info","Copied to cipboard", payment.paymentLink);
                               })
                               .catch(() => {
-                                triggerAlert("error", "Error","Error to copy", payment.paymentLink);
+                                triggerAlert("warning", "CrossPay", "Payment link", payment.paymentLink);
                               });
                             }}>
                           <ContentCopyIcon />
