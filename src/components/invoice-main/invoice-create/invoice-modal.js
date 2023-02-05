@@ -8,7 +8,7 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import InvoiceDetails from '../../invoice-page/invoice-details';
 import { useSelector } from 'react-redux';
 import { useQuery } from 'react-query';
-import { config } from "../../../config";
+//import { config } from "../../../config";
 import axios from "axios";
 
 const InvoiceModal = ({ invoiceDetails, setInvoiceDetails }) => {
@@ -17,7 +17,7 @@ const InvoiceModal = ({ invoiceDetails, setInvoiceDetails }) => {
     useQuery(["getUserData"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/wallet`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/wallet`)
                 .then((res) => setUserWallets(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -25,7 +25,7 @@ const InvoiceModal = ({ invoiceDetails, setInvoiceDetails }) => {
     useQuery(["getProducts"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/product`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/product`)
                 .then((res) => setProducts(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -34,7 +34,7 @@ const InvoiceModal = ({ invoiceDetails, setInvoiceDetails }) => {
     useQuery(["getSupportedCryptos"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/cryptocurrency`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/cryptocurrency`)
                 .then((res) => setSupportedCryptocurrencies(res.data)),
         { refetchOnWindowFocus: false }
     );
@@ -48,7 +48,7 @@ const InvoiceModal = ({ invoiceDetails, setInvoiceDetails }) => {
     useQuery(["getCustomers"],
         async () =>
             await axios
-                .get(`${config.contextRoot}/user/${userAddress}/customer`)
+                .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}/customer`)
                 .then((res) => setCustomers(res.data)),
         { refetchOnWindowFocus: false }
     );

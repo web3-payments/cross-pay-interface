@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ethers } from "ethers";
 import { useSelector } from 'react-redux';
 import { useQuery } from 'react-query';
-import { config } from "../../../config";
+//import { config } from "../../../config";
 import axios from "axios";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -18,7 +18,7 @@ export const InvoiceCreation = ({fetchInvoices, triggerAlert, setOpen, open}) =>
   useQuery(["getUserData"], 
     async() => 
       await axios 
-        .get(`${config.contextRoot}/user/${userAddress}`)
+      .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/user/${userAddress}`)
         .then((res) => setInvoiceDetails({...invoiceDetails, ["user"]: res.data}) ), 
         { refetchOnWindowFocus: false}
     );
@@ -54,7 +54,7 @@ export const InvoiceCreation = ({fetchInvoices, triggerAlert, setOpen, open}) =>
     console.log(invoiceDetails);
     invoiceDetails.userAddress = userAddress;
     await axios
-      .post(`${config.contextRoot}/invoice`, invoiceDetails)
+      .post(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/invoice`, invoiceDetails)
       .then(function (response) {
         if(response.status === 200){
           console.log("Done");

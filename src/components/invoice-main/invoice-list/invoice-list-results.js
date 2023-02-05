@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
-import { config } from "../../../config";
+//import { config } from "../../../config";
 import axios from "axios";
 import { format } from 'date-fns';
 import { FormControl, Chip, Box, Card, TextField, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, IconButton } from '@mui/material';
@@ -24,7 +24,7 @@ export const InvoiceListResults = ({ invoices }) => {
   };
 
   const cancelInvoice = async (hash) => {
-    await axios.post(`${config.contextRoot}/invoice/${hash}/cancellation`);
+    await axios.post(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/invoice/${hash}/cancellation`);
   }
 
   //TODO: Move this to a utils class, it might ve used by other types of invoices

@@ -17,7 +17,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { config } from "../../config";
+//import { config } from "../../config";
 
 import "./invoice-page.css"
 import InvoiceDetails from './invoice-details';
@@ -29,7 +29,7 @@ const InvoicePage = (props) => {
     ["getInvoiceInfo", invoiceHash],
     async () =>
       await axios
-        .get(`${config.contextRoot}/invoice/${invoiceHash}`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/invoice/${invoiceHash}`)
         .then((res) => setInvoiceInfo(res.data)),
     { refetchOnWindowFocus: false }
   );

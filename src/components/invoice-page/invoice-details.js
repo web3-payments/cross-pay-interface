@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Contract, ethers } from "ethers";
 import * as InvoiceContract from "../../abis/payment/PaymentContract.json";
 import * as ERC20 from "../../abis/ERC20/ERC20.json";
-import { config } from "../../config";
+//import { config } from "../../config";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereum-wallet-provider";
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -23,8 +23,20 @@ import {
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
+import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import idl from '../../idl/cross_pay_solana.json';
+import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
+import { getAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token";
+
 
 const InvoiceDetails = ({ invoiceInfo, mock, setInvoiceInfo }) => {
+    const opts = {preflightCommitment: "processed"}
+    const { connection } = useConnection();
+    const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
+    const wallet = useAnchorWallet();
+    const { publicKey, sendTransaction, connected } = useWallet();
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState();
@@ -93,6 +105,181 @@ const InvoiceDetails = ({ invoiceInfo, mock, setInvoiceInfo }) => {
         triggerAlert("success", "Success", "Invoice paid!", null);
     }
 
+    const getSolanaWalletProvider = async() => {
+        if(!wallet){
+            return null;
+        }
+        const provider = new SolanaProvider(
+            connection, wallet, opts.preflightCommitment,
+          );
+        return provider;
+    } 
+
+    //TODO: refactor this 
+    // we must have one only method pay that can handle any blockchain invoice. 
+    // we need to see the similarity from ethereum invoice and solana to make it unique
+    const paySolana = async () => {
+        if (mock) {
+            return;
+        }
+        if(!connected){
+            await setOpenSolanaWalletDialog(true)
+        }
+        setIsLoading(true);
+        const programId = new PublicKey(invoiceInfo.cryptocurrency.smartContract.address);
+        const provider = await getSolanaWalletProvider();
+        const program = new Program(idl, programId, provider);
+        //PDAs
+        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("admin_state"),
+            ],
+            programId
+        );
+        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("fee_account_signer"),
+            ],
+            programId
+        );
+
+        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync(
+            [
+            Buffer.from("sol_fee_account"),
+            feeAccountSigner.toBuffer(),
+            ],
+            programId
+        );
+        let transactionDetails;
+        if (invoiceInfo.cryptocurrency.nativeToken) {
+            try {
+                transactionDetails = await paySolanaNativeToken(program, invoiceInfo, adminStateAccount, feeAccountSigner, solFeeAccount);
+            } catch (error) {
+                setIsLoading(false);
+                console.error(error)
+                triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
+                return;
+            }
+        } else {
+            try {
+                transactionDetails = await paySolanaToken(program, invoiceInfo, adminStateAccount, feeAccountSigner);
+            } catch (error) {
+                setIsLoading(false);
+                console.error(error)
+                triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
+                return;
+            }
+        }
+        await callInvoiceConfirmation(transactionDetails);
+        console.log("Invoice confirmed");
+        setIsLoading(false);
+        triggerAlert("success", "Success", "Invoice paid!", null);
+    }
+
+    async function paySolanaNativeToken(program, invoiceInfo, adminStateAccount, feeAccountSigner, solFeeAccount){
+        let txn;
+        try {
+             txn = await program.methods
+                .payWithSol(new BN(invoiceInfo.amount * LAMPORTS_PER_SOL))
+                .accounts({
+                    client: new PublicKey(invoiceInfo.creditAddress),
+                    customer: wallet.publicKey,
+                    adminState: adminStateAccount,
+                    solFeeAccount: solFeeAccount, 
+                    feeAccountSigner: feeAccountSigner, 
+                })
+                .transaction();
+          } catch (err) {
+            console.log("Transaction error: ", err);
+          }
+        if(txn === undefined){
+            setIsLoading(false);
+            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+            return;
+        }
+        const lastestBlockHash = await connection.getLatestBlockhash();
+        txn.recentBlockhash = lastestBlockHash.blockhash;
+        txn.feePayer = wallet.publicKey;
+        txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        const estimatedFee = await txn.getEstimatedFee(connection);
+        const txnfinal = await window.solana.signAndSendTransaction(txn);
+        const transactionDetails = {
+            transactionHash: txnfinal.signature,
+            blockHash: lastestBlockHash.blockhash,
+            blockNumber: lastestBlockHash.lastValidBlockHeight,
+            gasUsed: estimatedFee,
+            toAddress: invoiceInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+            fromAddress: txnfinal.publicKey
+        };
+        return transactionDetails;
+    }
+
+    async function paySolanaToken(program, invoiceInfo, adminStateAccount, feeAccountSigner) {
+        const mintToken = new PublicKey(invoiceInfo.cryptocurrency.address)
+        //const recipientAddress = new PublicKey("2RqrRYTKkr8SAfMYqrtZ9Bj8uUXw3Wde6UjjD4wj4iPH");
+        const recipientAddress = new PublicKey(invoiceInfo.creditAddress);
+        // let transactionInstructions = [] // add all instructions here to approve only once
+        //create associated token accounts
+        let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, wallet.publicKey);
+        const fromTokenAccount = await getAccount(connection, associatedTokenFrom);
+        const associatedTokenTo = await getAssociatedTokenAddress(mintToken,recipientAddress);
+        if(!await connection.getAccountInfo(associatedTokenTo)){
+            console.log("need create associate account");
+            let transaction = new Transaction().add(
+                createAssociatedTokenAccountInstruction(
+                    publicKey,
+                    associatedTokenTo,
+                    recipientAddress,
+                    mintToken
+                )
+            );
+            const lastestBlockHash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = lastestBlockHash.blockhash;
+            transaction.feePayer = wallet.publicKey;
+            transaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+            console.log("transaction", transaction)
+            await window.solana.signAndSendTransaction(transaction)
+        };
+        const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
+        let invoiceTransaction = await program.methods
+            .payWithToken(new BN(toWei(invoiceInfo.amount, invoiceInfo.cryptocurrency.decimals).toString()))
+            .accounts({
+                client: recipientAddress,  
+                customer: wallet.publicKey,
+                tokenMint: mintToken, 
+                clientTokenAccount: associatedTokenTo,
+                customerTokenAccount: fromTokenAccount.address,
+                tokenFeeAccount: tokenFeeAccount, 
+                feeAccountSigner: feeAccountSigner,
+                adminState: adminStateAccount,
+            })
+            .transaction();
+        if(invoiceTransaction === undefined){
+            setIsLoading(false);
+            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+            return;
+        }
+        const lastestBlockHash = await connection.getLatestBlockhash();
+        invoiceTransaction.recentBlockhash = lastestBlockHash.blockhash;
+        invoiceTransaction.feePayer = wallet.publicKey;
+        invoiceTransaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        const estimatedFee = await invoiceTransaction.getEstimatedFee(connection);
+        let txnFinal = await window.solana.signAndSendTransaction(invoiceTransaction)
+        const transactionDetails = {
+            transactionHash: txnFinal.signature,
+            blockHash: lastestBlockHash.blockhash,
+            blockNumber: lastestBlockHash.lastValidBlockHeight,
+            gasUsed: estimatedFee,
+            toAddress: invoiceInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+            fromAddress: txnFinal.publicKey
+        };
+        console.log(transactionDetails);
+        return transactionDetails;
+    }
+
+
+
+
     async function invoiceNativeToken(invoiceContract, invoiceInfo) {
         const transaction = await invoiceContract.pay(invoiceInfo.creditAddress, { value: ethers.utils.parseEther(invoiceInfo.amount.toString()) }); // use the amount from the invoiceInfo
         console.log(`Invoice Transaction Hash: ${transaction.hash}`);
@@ -144,7 +331,7 @@ const InvoiceDetails = ({ invoiceInfo, mock, setInvoiceInfo }) => {
         invoiceConfirmation.transactionDetails = transactionDetails;
         invoiceConfirmation.amountPaid = invoiceInfo.amount;
         invoiceConfirmation.products = invoiceInfo.products;
-        await axios.post(`${config.contextRoot}/invoice/${invoiceInfo.hash}/confirmation`, invoiceConfirmation);
+        await axios.post(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/invoice/${invoiceInfo.hash}/confirmation`, invoiceConfirmation);
     }
 
     const isCustomerRequiredInfo = (customerRequiredInfo) => {
@@ -311,10 +498,19 @@ const InvoiceDetails = ({ invoiceInfo, mock, setInvoiceInfo }) => {
                 </CardContent>
                 <Divider />
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
-                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
-                        Pay {invoiceInfo?.amount} {invoiceInfo?.cryptocurrency?.symbol}
-                    </Button>
-                </Box>
+                            {invoiceInfo?.cryptocurrency?.network.name === 'Solana' ?
+                                (
+                                    <Button color="primary" variant="contained" onClick={paySolana} disabled={!isReadyToPay() && !mock}>
+                                        Pay {invoiceInfo?.amount} {invoiceInfo?.cryptocurrency?.symbol}
+                                    </Button>
+
+                                ) :
+                                (
+                                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
+                                        Pay {invoiceInfo?.amount} {invoiceInfo?.cryptocurrency?.symbol}
+                                    </Button>
+                                )}
+                        </Box>
                 <Box sx={{ display: 'center', justifyContent: 'center', p: 1 }}>
                     <Typography color="textSecondary" variant="overline"  >
                         Powered by CrossPay Crypto
