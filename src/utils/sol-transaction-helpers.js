@@ -9,6 +9,7 @@ import { Program, web3, BN } from '@project-serum/anchor';
 import { AddressLookupTableAccount, Transaction, TransactionMessage, } from "@solana/web3.js";
 import idl from '../idl/cross_pay_solana.json';
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { toWei } from "./eth-transaction-helpers";
 
 export const getOrCreateATA = async (provider, tokenMint) => {
     const userATA = await getAssociatedTokenAddress(
@@ -110,8 +111,8 @@ export const serializeVersionedTx = async (connection, versionedTx) => {
     return versionedTx.serialize()
 }
 
-export async function paySolanaNativeToken(provider, setIsLoading, triggerAlert, programId, paymentInfo) {
-    console.log(provider);
+export async function paySolanaNativeToken(provider, programId, paymentInfo, setIsLoading, triggerAlert,) {
+
     //PDAs
     const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
         [
@@ -133,7 +134,7 @@ export async function paySolanaNativeToken(provider, setIsLoading, triggerAlert,
         ],
         programId
     );
-    const program = new Program(idl, programId, provider);
+    const program = new Program(idl, programId, provider); 
     let txn;
     try {
         txn = await program.methods
@@ -146,6 +147,7 @@ export async function paySolanaNativeToken(provider, setIsLoading, triggerAlert,
                 feeAccountSigner: feeAccountSigner,
             })
             .transaction();
+          
     } catch (err) {
         console.log("Transaction error: ", err);
     }
@@ -170,6 +172,82 @@ export async function paySolanaNativeToken(provider, setIsLoading, triggerAlert,
         toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
         fromAddress: txnfinal.publicKey
     };
+    return transactionDetails;
+}
+export async function paySolanaToken(provider, programId, paymentInfo, setIsLoading, triggerAlert,) {
+    const program = new Program(idl, programId, provider);
+    //PDAs
+    const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("admin_state"),
+        ],
+        programId
+    );
+    const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("fee_account_signer"),
+        ],
+        programId
+    );
+    const mintToken = new PublicKey(paymentInfo.cryptocurrency.address)
+    //const recipientAddress = new PublicKey("2RqrRYTKkr8SAfMYqrtZ9Bj8uUXw3Wde6UjjD4wj4iPH");
+    const recipientAddress = new PublicKey(paymentInfo.creditAddress);
+    // let transactionInstructions = [] // add all instructions here to approve only once
+    //create associated token accounts
+    let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, provider.wallet.publicKey);
+    const fromTokenAccount = await getAccount(provider.connection, associatedTokenFrom);
+    const associatedTokenTo = await getAssociatedTokenAddress(mintToken, recipientAddress);
+    if (!await provider.connection.getAccountInfo(associatedTokenTo)) {
+        console.log("need create associate account");
+        let transaction = new Transaction().add(
+            createAssociatedTokenAccountInstruction(
+                provider.wallet.publicKey,
+                associatedTokenTo,
+                recipientAddress,
+                mintToken
+            )
+        );
+        const lastestBlockHash = await provider.connection.getLatestBlockhash();
+        transaction.recentBlockhash = lastestBlockHash.blockhash;
+        transaction.feePayer = provider.wallet.publicKey;
+        transaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        console.log("transaction", transaction)
+        await window.solana.signAndSendTransaction(transaction)
+    };
+    const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
+    let paymentTransaction = await program.methods
+        .payWithToken(new BN(toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals).toString()))
+        .accounts({
+            client: recipientAddress,
+            customer: provider.wallet.publicKey,
+            tokenMint: mintToken,
+            clientTokenAccount: associatedTokenTo,
+            customerTokenAccount: fromTokenAccount.address,
+            tokenFeeAccount: tokenFeeAccount,
+            feeAccountSigner: feeAccountSigner,
+            adminState: adminStateAccount,
+        })
+        .transaction();
+    if (paymentTransaction === undefined) {
+        setIsLoading(false);
+        triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+        return;
+    }
+    const lastestBlockHash = await provider.connection.getLatestBlockhash();
+    paymentTransaction.recentBlockhash = lastestBlockHash.blockhash;
+    paymentTransaction.feePayer = provider.wallet.publicKey;
+    paymentTransaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+    const estimatedFee = await paymentTransaction.getEstimatedFee(provider.connection);
+    let txnFinal = await window.solana.signAndSendTransaction(paymentTransaction)
+    const transactionDetails = {
+        transactionHash: txnFinal.signature,
+        blockHash: lastestBlockHash.blockhash,
+        blockNumber: lastestBlockHash.lastValidBlockHeight,
+        gasUsed: estimatedFee,
+        toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+        fromAddress: txnFinal.publicKey
+    };
+    console.log(transactionDetails);
     return transactionDetails;
 }
 export const SOL_MINT = "So11111111111111111111111111111111111111112";
