@@ -18,43 +18,59 @@ export const JupiterApiProvider = ({ children }) => {
 
 
   useEffect(() => {
+
+    if (tokenMap.size > 0) return
     (async () => {
-      const [indexedRouteMapResult, tokens] = await Promise.all([
-        api.v4IndexedRouteMapGet(),
-        fetch(TOKEN_LIST_URL[process.env.REACT_APP_TOKEN_LIST_CLUSTER])
-          .then(response => response.json())
-      ]);
+      while (true) {
 
-      const tokenList = tokens
-      const { indexedRouteMap = {}, mintKeys = [] } = indexedRouteMapResult;
+        try {
+          const [indexedRouteMapResult, tokens] = await Promise.all([
+            api.v4IndexedRouteMapGet(),
+            fetch(TOKEN_LIST_URL[process.env.REACT_APP_TOKEN_LIST_CLUSTER])
+              .then(response => response.json())
+          ]);
+          // console.log(indexedRouteMapResult);
+          // console.log(tokens);
+          const tokenList = tokens
+          const { indexedRouteMap = {}, mintKeys = [] } = indexedRouteMapResult;
 
-      const routeMap = Object.keys(indexedRouteMap).reduce((routeMap, key) => {
-        routeMap.set(
-          mintKeys[Number(key)],
-          indexedRouteMap[key].map((index) => mintKeys[index])
-        );
-        return routeMap;
-      }, new Map());
+          const routeMap = Object.keys(indexedRouteMap).reduce((routeMap, key) => {
+            routeMap.set(
+              mintKeys[Number(key)],
+              indexedRouteMap[key].map((index) => mintKeys[index])
+            );
+            return routeMap;
+          }, new Map());
 
-      setTokenMap(
-        tokenList.reduce((map, item) => {
-          map.set(item.address, item);
-          return map;
-        }, new Map())
-      );
-      setTokenNameMap(
-        tokenList.reduce((map, item) => {
-          map.set(item.name, item);
-          return map;
-        }, new Map())
-      );
-      setRouteMap(routeMap);
-      setLoaded(true);
+          const tknMap = tokenList.reduce((map, item) => {
+            map.set(item.address, item);
+            return map;
+          }, new Map())
+          const tknNameMap = tokenList.reduce((map, item) => {
+            map.set(item.name, item);
+            return map;
+          }, new Map())
+
+          if (tknNameMap.size > 0 && tknMap.size > 0 && routeMap.size > 0) {
+            setTokenMap(
+              tknMap
+            );
+            setTokenNameMap(
+              tknNameMap
+            );
+            setRouteMap(routeMap);
+            setLoaded(true);
+            break
+          }
+        } catch (error) {
+
+        }
+      }
     })();
   }, []);
 
   return (
-    <JupiterApiContext.Provider value={{ api, routeMap, tokenMap, tokenNameMap,loaded }}>
+    <JupiterApiContext.Provider value={{ api, routeMap, tokenMap, tokenNameMap, loaded }}>
       {children}
     </JupiterApiContext.Provider>
   );

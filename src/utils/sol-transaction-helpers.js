@@ -110,7 +110,8 @@ export const serializeVersionedTx = async (connection, versionedTx) => {
     return versionedTx.serialize()
 }
 
-export async function paySolanaNativeToken(provider, wallet, setIsLoading, triggerAlert, programId, paymentInfo) {
+export async function paySolanaNativeToken(provider, setIsLoading, triggerAlert, programId, paymentInfo) {
+    console.log(provider);
     //PDAs
     const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
         [
@@ -139,7 +140,7 @@ export async function paySolanaNativeToken(provider, wallet, setIsLoading, trigg
             .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
             .accounts({
                 client: new PublicKey(paymentInfo.creditAddress),
-                customer: wallet.publicKey,
+                customer: provider.wallet.publicKey,
                 adminState: adminStateAccount,
                 solFeeAccount: solFeeAccount,
                 feeAccountSigner: feeAccountSigner,
@@ -148,6 +149,7 @@ export async function paySolanaNativeToken(provider, wallet, setIsLoading, trigg
     } catch (err) {
         console.log("Transaction error: ", err);
     }
+
     if (txn === undefined) {
         setIsLoading(false);
         triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
@@ -155,7 +157,8 @@ export async function paySolanaNativeToken(provider, wallet, setIsLoading, trigg
     }
     const lastestBlockHash = await provider.connection.getLatestBlockhash();
     txn.recentBlockhash = lastestBlockHash.blockhash;
-    txn.feePayer = wallet.publicKey;
+    txn.feePayer = provider.wallet.publicKey;
+
     txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
     const estimatedFee = await txn.getEstimatedFee(provider.connection);
     const txnfinal = await window.solana.signAndSendTransaction(txn);
@@ -170,3 +173,7 @@ export async function paySolanaNativeToken(provider, wallet, setIsLoading, trigg
     return transactionDetails;
 }
 export const SOL_MINT = "So11111111111111111111111111111111111111112";
+
+export const sleep = (ms) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};

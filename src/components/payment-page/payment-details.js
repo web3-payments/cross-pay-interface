@@ -34,7 +34,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 
 import { useJupiterApiContext } from "../../context/jupiter-api-context";
-import { getBalance, paySolanaNativeToken, SOL_MINT, } from '../../utils/sol-transaction-helpers';
+import { getBalance, paySolanaNativeToken, sleep, SOL_MINT, } from '../../utils/sol-transaction-helpers';
 import { fromWei, paymentERC20, payUsingEth, toWei } from '../../utils/eth-transaction-helpers';
 
 const Item = styled(Container)(({ theme }) => ({
@@ -55,7 +55,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const [paymentConfirmation, setPaymentConfirmation] = useState({});
     const [selectedBlockchain, setSelectedBlockchain] = useState();
     const [hasEnoughTokens, setHasEnoughTokens] = useState(true);
-    const [possibleInputs, setPossibleInputs] = useState();
+    const [possibleInputs, setPossibleInputs] = useState([]);
     const [selectedToken, setSelectedToken] = useState();
 
 
@@ -71,15 +71,18 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         const provider = await getSolanaWalletProvider()
 
         setIsLoading(true);
+
         try {
             const cryptoCurrencyPriceWRTSelectedToken = await api.v4PriceGet({
                 ids: paymentInfo.cryptocurrency.symbol,
                 vsToken: selected.symbol,
             })
 
+
             // check if user has enough of the selected balance
             const balanceOfSelectedToken = await getBalance(provider, selected.symbol === "SOL", new PublicKey(selected.address))
-            const balanceOfExpectedToken = await getBalance(provider, paymentInfo.cryptocurrency.nativeToken, new PublicKey(paymentInfo.cryptocurrency.address))
+
+            const balanceOfExpectedToken = await getBalance(provider, paymentInfo.cryptocurrency.nativeToken, new PublicKey(SOL_MINT))
 
             //price of `paymentInfo.cryptocurrency` using selected as quote
             //saves us from calculating in stables first
@@ -97,6 +100,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             const encodedMessage = new TextEncoder().encode(message);
             let signature = await signMessage(encodedMessage)
             setIsLoading(false);
+            sleep(2000)
             triggerAlert("success", "Success", "Payment Executed!", null);
             // if (balanceOfSelectedToken > 0) {
 
@@ -152,7 +156,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
 
 
     useEffect(() => {
-        if (selectedBlockchain === "solana" && connected) {
+        if (selectedBlockchain === "Solana" && connected) {
             completePaymentOnSolana()
         }
     }, [publicKey, routeMap])
@@ -172,7 +176,9 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             const userBalance = await getBalance(provider, true)
             if (userBalance < paymentInfo?.amount) {
                 triggerAlert("error", "Error", `you don't have enough ${paymentInfo?.cryptocurrency.symbol} to complete this payment `, `select another token to pay`)
-                setPossibleInputs(routeMap.get(SOL_MINT))
+
+                setPossibleInputs(routeMap.get(SOL_MINT) ?? [])
+       
                 return setHasEnoughTokens(false)
             }
             // user has enough of the primary native currency
@@ -200,12 +206,11 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         setAlert({ severity: severity, title: title, message: message, strongMessage: strongMessage });
     }
     const pay = async () => {
-
-        if (paymentInfo.cryptocurrency.network.name == "solana") {
+        if (paymentInfo.cryptocurrency.network.name == "Solana") {
             if (connected) {
                 disconnectSolWallet()
             }
-            setSelectedBlockchain("solana")
+            setSelectedBlockchain("Solana")
             setOpenSolanaWalletDialog(true)
         } else {
             setSelectedBlockchain("ethereum")
@@ -295,7 +300,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         if (paymentInfo.cryptocurrency.nativeToken) {
             try {
                 const provider = await getSolanaWalletProvider()
-                transactionDetails = await paySolanaNativeToken(provider, wallet, setIsLoading, triggerAlert, programID, paymentInfo);
+
+                transactionDetails = await paySolanaNativeToken(provider, setIsLoading, triggerAlert, programID, paymentInfo);
             } catch (error) {
                 setIsLoading(false);
                 console.error(error)
@@ -632,17 +638,27 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                     return name
                                                 }}
                                                 renderInput={(params) => {
+                                                    try {
 
-                                                    handleUpdateSelected(params.inputProps.value)
+                                                        handleUpdateSelected(params.inputProps.value)
+                                                    } catch (error) {
+                                                        console.log(error);
+                                                    }
                                                     return (
                                                         <TextField {...params} label={selectedToken?.name || ""} margin="normal" />
                                                     )
                                                 }}
                                                 renderOption={(props, tokenMint, { inputValue }) => {
-                                                    const option = tokenMap.get(tokenMint);
-                                                    if (!option) return
-                                                    const matches = match(option.name, inputValue, { insideWords: true });
-                                                    const parts = parse(option.name, matches);
+                                                    let option, parts
+                                                    try {
+                                                        option = tokenMap.get(tokenMint);
+                                                        if (!option) return
+                                                        const matches = match(option.name, inputValue, { insideWords: true });
+                                                        parts = parse(option.name, matches);
+                                                    } catch (error) {
+                                                        console.log(error);
+                                                    }
+
 
                                                     return (
                                                         <li {...props}>
