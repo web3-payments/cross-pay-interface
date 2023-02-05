@@ -436,7 +436,7 @@ const InvoiceDetails = ({ invoiceInfo, mock, setInvoiceInfo }) => {
                         </Grid>
                         <Grid item xs={3}>
                             <Typography sx={{ pl: 2 }} variant="overline" color="textSecondary" >
-                                Memo: ß
+                                Memo:
                             </Typography>
                         </Grid>
                         <Grid item xs={9}>
