@@ -9,7 +9,7 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import { useNavigate } from 'react-router-dom';
 import Tooltip from '@mui/material/Tooltip';
 
-export const PaymentListResults = ({ payments }) => {
+export const PaymentListResults = ({ payments, triggerAlert}) => {
   const navigate = useNavigate();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
@@ -90,7 +90,15 @@ export const PaymentListResults = ({ payments }) => {
                   <TableCell>
                       <Tooltip title="Copy Payment Link">
                         <IconButton color="primary" aria-label="edit" component="label"
-                          onClick={() => {navigator.clipboard.writeText(payment.paymentLink)}}>
+                          onClick={() => {
+                              navigator.clipboard.writeText(payment.paymentLink)
+                              .then(() => {
+                                triggerAlert("info", "Info","Copied to cipboard", payment.paymentLink);
+                              })
+                              .catch(() => {
+                                triggerAlert("warning", "CrossPay", "Payment link", payment.paymentLink);
+                              });
+                            }}>
                           <ContentCopyIcon />
                         </IconButton>
                       </Tooltip>

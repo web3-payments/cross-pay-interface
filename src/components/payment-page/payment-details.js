@@ -44,6 +44,7 @@ const Item = styled(Container)(({ theme }) => ({
     textAlign: 'center',
     color: theme.palette.text.secondary,
 }));
+import { getAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token";
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const opts = { preflightCommitment: "processed" }
@@ -285,7 +286,10 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         return provider;
     }
 
+    
+    const swap = async () => {
 
+    }
 
     //TODO: refactor this 
     // we must have one only method pay that can handle any blockchain payment. 
@@ -318,8 +322,68 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     }
 
 
-
-    async function paySolanaToken(programId, paymentInfo) {
+    async function paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner) {
+        const mintToken = new PublicKey(paymentInfo.cryptocurrency.address)
+        //const recipientAddress = new PublicKey("2RqrRYTKkr8SAfMYqrtZ9Bj8uUXw3Wde6UjjD4wj4iPH");
+        const recipientAddress = new PublicKey(paymentInfo.creditAddress);
+        // let transactionInstructions = [] // add all instructions here to approve only once
+        //create associated token accounts
+        let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, wallet.publicKey);
+        const fromTokenAccount = await getAccount(connection, associatedTokenFrom);
+        const associatedTokenTo = await getAssociatedTokenAddress(mintToken,recipientAddress);
+        if(!await connection.getAccountInfo(associatedTokenTo)){
+            console.log("need create associate account");
+            let transaction = new Transaction().add(
+                createAssociatedTokenAccountInstruction(
+                    publicKey,
+                    associatedTokenTo,
+                    recipientAddress,
+                    mintToken
+                )
+            );
+            const lastestBlockHash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = lastestBlockHash.blockhash;
+            transaction.feePayer = wallet.publicKey;
+            transaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+            console.log("transaction", transaction)
+            await window.solana.signAndSendTransaction(transaction)
+        };
+        const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
+        let paymentTransaction = await program.methods
+            .payWithToken(new BN(toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals).toString()))
+            .accounts({
+                client: recipientAddress,  
+                customer: wallet.publicKey,
+                tokenMint: mintToken, 
+                clientTokenAccount: associatedTokenTo,
+                customerTokenAccount: fromTokenAccount.address,
+                tokenFeeAccount: tokenFeeAccount, 
+                feeAccountSigner: feeAccountSigner,
+                adminState: adminStateAccount,
+            })
+            .transaction();
+        if(paymentTransaction === undefined){
+            setIsLoading(false);
+            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
+            return;
+        }
+        const lastestBlockHash = await connection.getLatestBlockhash();
+        paymentTransaction.recentBlockhash = lastestBlockHash.blockhash;
+        paymentTransaction.feePayer = wallet.publicKey;
+        paymentTransaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
+        const estimatedFee = await paymentTransaction.getEstimatedFee(connection);
+        let txnFinal = await window.solana.signAndSendTransaction(paymentTransaction)
+        const transactionDetails = {
+            transactionHash: txnFinal.signature,
+            blockHash: lastestBlockHash.blockhash,
+            blockNumber: lastestBlockHash.lastValidBlockHeight,
+            gasUsed: estimatedFee,
+            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
+            fromAddress: txnFinal.publicKey
+        };
+        console.log(transactionDetails);
+        return transactionDetails;
+    }
 
     }
 
@@ -441,7 +505,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                             {paymentInfo?.products?.length > 0 &&
                                                 paymentInfo?.products.map((product) => (
 
-                                                    <ListItem key={product.item.id} button>
+                                                    <ListItem key={product.item.id}>
                                                         <ListItemAvatar>
                                                             <Avatar
                                                                 alt={product.item?.name}
@@ -470,7 +534,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                 ))}
                                         </List>
                                         <Divider />
-                                        {paymentInfo?.amount &&
+                                        {paymentInfo?.amount > 0 &&
                                             <Grid item xs={12} lg={12} align="right">
                                                 <Typography sx={{ mt: 3, mr: '1%' }} variant="overline">
                                                     {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
@@ -700,6 +764,6 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             )}
         </>
     );
-}
+
 
 export default PaymentDetails;
