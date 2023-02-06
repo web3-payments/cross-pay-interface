@@ -621,14 +621,14 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                             </Button> :
                                 <>
                                     <Grid item md={6} xs={12}>
-                                        <Item>
+                                    <Item  width="100%"> 
                                             <InputLabel required >Select Token</InputLabel>
                                         </Item>
                                         <FormControl fullWidth >
 
                                             <Autocomplete
                                                 id="select-token"
-                                                sx={{ width: 300 }}
+                                                // sx={{ width: 300 }}
                                                 options={possibleInputs}
                                                 getOptionLabel={(tokenMint) => {
                                                     const name = tokenMap.get(tokenMint)?.name;
@@ -677,7 +677,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                                 }}
                                             />
                                         </FormControl>
-                                        <Item>
+                                        <Item >
                                             {selectedToken && <Button color="primary" variant="contained" onClick={() => { swapAndPay(selectedToken) }} >
                                                 Pay with {selectedToken.symbol}
                                             </Button>}

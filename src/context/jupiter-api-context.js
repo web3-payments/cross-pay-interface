@@ -21,8 +21,7 @@ export const JupiterApiProvider = ({ children }) => {
 
     if (tokenMap.size > 0) return
     (async () => {
-      while (true) {
-
+      for (let i = 0; i < 3; i++) {
         try {
           const [indexedRouteMapResult, tokens] = await Promise.all([
             api.v4IndexedRouteMapGet(),
@@ -61,11 +60,14 @@ export const JupiterApiProvider = ({ children }) => {
             setRouteMap(routeMap);
             setLoaded(true);
             break
+          }else{
+            setLoaded(false)
           }
         } catch (error) {
 
         }
       }
+
     })();
   }, []);
 

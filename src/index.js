@@ -8,7 +8,6 @@ import { theme } from './components/theme';
 import { Provider } from 'react-redux';
 import store from './store/index';
 import { SolanaWalletAdapterContext } from "./context/solana-wallet-adapter-context";
-import { JupiterApiProvider } from "./context/jupiter-api-context"
 require('@solana/wallet-adapter-react-ui/styles.css');
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
@@ -20,9 +19,7 @@ root.render(
     <React.StrictMode>
       <Provider store={store}>
         <SolanaWalletAdapterContext>
-          <JupiterApiProvider>
             <App /> 
-          </JupiterApiProvider>
         </SolanaWalletAdapterContext>
       </Provider>
     </React.StrictMode>
