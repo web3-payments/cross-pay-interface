@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import { clusterApiUrl } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 
-import { LedgerWalletAdapter, PhantomWalletAdapter, SolflareWalletAdapter, } from '@solana/wallet-adapter-wallets';
+import { LedgerWalletAdapter,  SolflareWalletAdapter, } from '@solana/wallet-adapter-wallets';
 
 import {
     WalletModalProvider,
@@ -13,20 +13,21 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 export const SolanaWalletAdapterContext = ({ children }) => {
     // The network can be set to 'localnet','devnet', 'testnet', or 'mainnet-beta'.
     const network = process.env.REACT_APP_CLUSTER;
-
+    const rpcEndpoint = process.env.REACT_APP_RPC_ENDPOINT
 
     const endpoint = useMemo(() => {
         if (network === "localnet") {
             return 'http://localhost:8899';
         }
-        return clusterApiUrl(network)
+        
+        return  rpcEndpoint ?? clusterApiUrl(network)
     }, [network]);
 
 
 
     const wallets = useMemo(
         () => [
-            new PhantomWalletAdapter(),
+
             new SolflareWalletAdapter({ network }),
             new LedgerWalletAdapter({}),
         ],
@@ -43,7 +44,7 @@ export const SolanaWalletAdapterContext = ({ children }) => {
     );
 
     return (
-        <ConnectionProvider endpoint={endpoint}>
+        <ConnectionProvider endpoint={endpoint} >
             <WalletProvider wallets={wallets} onError={onError} autoConnect >
                 <WalletModalProvider>{children}</WalletModalProvider>
             </WalletProvider>

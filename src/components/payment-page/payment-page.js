@@ -32,7 +32,7 @@ const PaymentPage = (props) => {
   const [paymentInfo, setPaymentInfo] = useState({});
 
   return (
-    <JupiterApiProvider>
+
       <React.Fragment>
         <AppBar position="static" color="primary">
           <Toolbar>
@@ -77,7 +77,6 @@ const PaymentPage = (props) => {
         </Box>
         {/* <div className="footer">Powered by CrossPay | terms | privacy</div> */}
       </React.Fragment>
-    </JupiterApiProvider>
   );
 };
 

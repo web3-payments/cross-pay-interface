@@ -3,6 +3,7 @@ import { Configuration, DefaultApi } from "@jup-ag/api";
 import { TokenInfo, TokenListProvider } from "@solana/spl-token-registry";
 import { CHAIN_ID } from "./constants";
 import { TOKEN_LIST_URL } from "@jup-ag/core";
+import { SOL_MINT } from "../utils/sol-transaction-helpers";
 
 const JupiterApiContext = React.createContext(null);
 
@@ -51,6 +52,14 @@ export const JupiterApiProvider = ({ children }) => {
           }, new Map())
 
           if (tknNameMap.size > 0 && tknMap.size > 0 && routeMap.size > 0) {
+
+            //change wrapped-sol to sol
+            const wSol = tknMap.get(SOL_MINT)
+            wSol.name = "SOL"
+            tknMap.set(SOL_MINT, wSol)
+            
+            //update tknNameMap
+            tknNameMap.set("SOL", wSol)
             setTokenMap(
               tknMap
             );
@@ -72,6 +81,7 @@ export const JupiterApiProvider = ({ children }) => {
   }, []);
 
   return (
+    // api.v4QuoteGet({})
     <JupiterApiContext.Provider value={{ api, routeMap, tokenMap, tokenNameMap, loaded }}>
       {children}
     </JupiterApiContext.Provider>

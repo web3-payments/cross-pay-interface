@@ -22,7 +22,7 @@ import {
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
 import { useAnchorWallet, useConnection, useWallet, } from '@solana/wallet-adapter-react';
-import { PublicKey, } from "@solana/web3.js";
+import { AddressLookupTableAccount, PublicKey, sendAndConfirmRawTransaction, sendAndConfirmTransaction, TransactionMessage, VersionedTransaction, } from "@solana/web3.js";
 import { AnchorProvider as SolanaProvider, BN } from '@project-serum/anchor';
 import Autocomplete from '@mui/material/Autocomplete';
 import { styled } from '@mui/material/styles';
@@ -34,7 +34,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 
 import { useJupiterApiContext } from "../../context/jupiter-api-context";
-import { getBalance, paySolanaNativeToken, paySolanaToken, sleep, SOL_MINT, } from '../../utils/sol-transaction-helpers';
+import { fromUIAmount, getBalance, getPaymentInstruction, paySolanaNativeToken, paySolanaToken, SOL_MINT, } from '../../utils/sol-transaction-helpers';
 import { fromWei, paymentERC20, payUsingEth, toWei } from '../../utils/eth-transaction-helpers';
 
 const Item = styled(Container)(({ theme }) => ({
@@ -47,7 +47,7 @@ const Item = styled(Container)(({ theme }) => ({
 
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
-    const opts = { preflightCommitment: "processed" }
+
 
 
     const [isLoading, setIsLoading] = useState(false);
@@ -66,8 +66,15 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const anchorWallet = useAnchorWallet();
     const { tokenMap, routeMap, tokenNameMap, loaded, api } = useJupiterApiContext();
 
+    useEffect(() => {
+        if (selectedBlockchain === "Solana" && connected) {
+            completePaymentOnSolana()
+        }
+    }, [publicKey, routeMap])
 
     const swapAndPay = async (selected,) => {
+        const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
+
         const EXPECTED_TOKEN_MINT = paymentInfo.cryptocurrency.nativeToken ? SOL_MINT : paymentInfo.cryptocurrency.address;
         const provider = await getSolanaWalletProvider()
 
@@ -95,59 +102,61 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             const amountToSell = amountOfSelectedTokenToSell + amountOfSelectedTokenToSell * 0.1;
             console.log(price, amountOfSelectedTokenToSell);
 
-            //TODO: do actual swap on mainnet
-            //TODO: for now just make user sign tx.
-            const message = ["Swap and Pay", publicKey.toBase58()];
-            const encodedMessage = new TextEncoder().encode(message);
-            let signature = await signMessage(encodedMessage)
-            setIsLoading(false);
-            sleep(2000)
-            triggerAlert("success", "Success", "Payment Executed!", null);
-            // if (balanceOfSelectedToken > 0) {
-
-            //     const routes = await api
-            //         .v4QuoteGet({
-            //             amount: Math.ceil(fromUIAmount(amountToSell, paymentInfo.cryptocurrency.decimals)),
-            //             inputMint: selected.address,
-            //             outputMint: EXPECTED_TOKEN_MINT,
-            //             slippage: 50,
-            //         }).then(res => res.data)
-
-            //     const {
-            //         swapTransaction,
-            //     } = await api.v4SwapPost({
-            //         body: {
-            //             route: routes[0],
-            //             userPublicKey: publicKey.toBase58(),
-            //             wrapUnwrapSOL: true,
-            //         }
-            //     });
-            //     const swapTransactionFromJupiterAPI = swapTransaction
-            //     const swapTransactionBuf = Buffer.from(swapTransactionFromJupiterAPI, 'base64')
-            //     var transaction = VersionedTransaction.deserialize(swapTransactionBuf)
+            if (balanceOfSelectedToken > 0) {
 
 
-            //     // get address lookup table accounts
-            //     // const addressLookupTableAccounts = await Promise.all(
-            //     //     transaction.message.addressTableLookups.map(async (lookup) => {
-            //     //         return new AddressLookupTableAccount({
-            //     //             key: lookup.accountKey,
-            //     //             state: AddressLookupTableAccount.deserialize(await connection.getAccountInfo(lookup.accountKey).then((res) => { return res.data })),
-            //     //         })
-            //     //     }))
-            //     // // decompile transaction message and add transfer instruction
-            //     // var message = TransactionMessage.decompile(transaction.message, { addressLookupTableAccounts: addressLookupTableAccounts })
+                const routes = await api
+                    .v4QuoteGet({
+                        amount: Math.ceil(fromUIAmount(amountToSell, selected.decimals)),
+                        inputMint: selected.address,
+                        outputMint: EXPECTED_TOKEN_MINT,
+                        slippage: 1,
+                    }).then(res => res.data)
 
-            //     // // compile the message and update the transaction
-            //     // transaction.message = message.compileToV0Message(addressLookupTableAccounts)
+                const {
+                    swapTransaction,
+                } = await api.v4SwapPost({
+                    body: {
+                        route: routes[0],
+                        userPublicKey: publicKey.toBase58(),
+                        wrapUnwrapSOL: true,
+                    }
+                });
+                const swapTransactionFromJupiterAPI = swapTransaction
+                const swapTransactionBuf = Buffer.from(swapTransactionFromJupiterAPI, 'base64')
+                var transaction = VersionedTransaction.deserialize(swapTransactionBuf)
 
-            //     // sign some transaction here
 
+                // get address lookup table accounts
+                const addressLookupTableAccounts = await Promise.all(
+                    transaction.message.addressTableLookups.map(async (lookup) => {
+                        return new AddressLookupTableAccount({
+                            key: lookup.accountKey,
+                            state: AddressLookupTableAccount.deserialize(await connection.getAccountInfo(lookup.accountKey).then((res) => { return res.data })),
+                        })
+                    }))
+                // decompile transaction message and add transfer instruction
+                var message = TransactionMessage.decompile(transaction.message, { addressLookupTableAccounts: addressLookupTableAccounts })
+                const crosspayPaymentInstruction = await getPaymentInstruction(provider, programID, paymentInfo,)
 
-            // } else {
-            //     setIsLoading(false);
-            //     return triggerAlert("error", "Error", `you don't have enough ${selected.symbol} `, `select another token to pay`)
-            // }
+                message.instructions.push(crosspayPaymentInstruction)
+                // compile the message and update the transaction
+                transaction.message = message.compileToV0Message(addressLookupTableAccounts)
+
+                //add payment transaction
+                try {
+                    await provider.sendAndConfirm(transaction,)
+                    setIsLoading(false);
+                    return triggerAlert("success", "Success", `Payment completed using`, `${selected.symbol} `)
+                } catch (error) {
+                    console.log(error);
+                    setIsLoading(false);
+                    return triggerAlert("error", "Error", `Payment using ${selected.symbol} failed `, `Try again or Contact the provider.`)
+                }
+            } else {
+                setIsLoading(false);
+                return triggerAlert("error", "Error", `you don't have enough ${selected.symbol} `, `select another token to pay`)
+            }
 
         } catch (err) {
             console.log(err);
@@ -156,11 +165,6 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     }
 
 
-    useEffect(() => {
-        if (selectedBlockchain === "Solana" && connected) {
-            completePaymentOnSolana()
-        }
-    }, [publicKey, routeMap])
 
 
     const handleUpdateSelected = async (value) => {
@@ -209,7 +213,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     const pay = async () => {
         if (paymentInfo.cryptocurrency.network.name == "Solana") {
             if (connected) {
-                disconnectSolWallet()
+                await disconnectSolWallet()
             }
             setSelectedBlockchain("Solana")
             setOpenSolanaWalletDialog(true)
@@ -281,7 +285,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             return null;
         }
 
-        const provider = new SolanaProvider(connection, anchorWallet, opts)
+        const provider = new SolanaProvider(connection, anchorWallet, { skipPreflight: true })
 
         return provider;
     }
@@ -621,7 +625,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                             </Button> :
                                 <>
                                     <Grid item md={6} xs={12}>
-                                    <Item  width="100%"> 
+                                        <Item width="100%">
                                             <InputLabel required >Select Token</InputLabel>
                                         </Item>
                                         <FormControl fullWidth >
