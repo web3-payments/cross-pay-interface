@@ -6,6 +6,7 @@ import { User as UserIcon } from '../icons/user';
 import WalletIcon from '@mui/icons-material/Wallet';
 import { Users as UsersIcon } from '../icons/users';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import InvoiceIcon from '@mui/icons-material/Receipt';
 import { Logo } from './logo';
 import { NavItem } from './nav-item';
 
@@ -19,6 +20,11 @@ const items = [
     href: '/payments',
     icon: (<PaymentsIcon />),
     title: 'Payments Links'
+  },
+  {
+    href: '/invoices',
+    icon: (<InvoiceIcon />),
+    title: 'Invoices'
   },
   {
     href: '/customers',
@@ -60,7 +66,7 @@ export const DashboardSidebar = (props) => {
         <div>
           <Box sx={{ p: 3, paddingBottom: 0}}>
             <a href='/'>
-              <Avatar src="/static/cpay_wallet_logo.jpg" sx={{ height: 64, mb: 2, width: 64 }}/>
+              <Avatar src="/static/CrosspAY.png" sx={{ height: 64, mb: 2, width: 64 }}/>
             </a>
           </Box>
         </div>

@@ -6,11 +6,11 @@ import { useParams } from 'react-router';
 
 export const Transactions = (props) => {
   const isConnected = useSelector((state) => state.isConnected);
-  const { paymentHash } = useParams();
+  const { type, paymentHash } = useParams();
   return (
   <DashboardLayout>
     {isConnected ? (
-      <TransactionsBox paymentHash={paymentHash}/>
+      <TransactionsBox type={type} paymentHash={paymentHash}/>
     ):(<LoggedOutPage/>)}
   </DashboardLayout>
   );
