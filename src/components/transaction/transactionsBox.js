@@ -6,13 +6,13 @@ import axios from "axios";
 import TransactionListResults from './transaction-list-results';
 import TransactionListToolbar from './transaction-list-toolbar';
 
-export const TransactionsBox = ({paymentHash}) => {
+export const TransactionsBox = ({type, paymentHash}) => {
   const userAddress = useSelector((state) => state.address);
   const [transactions, setTransactions] = useState();
   useQuery(["getTransactions"], 
     async() => 
       await axios 
-        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/payment/${paymentHash}/transaction`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}${process.env.REACT_APP_API_CONTEXT_ROOT}/${type}/${paymentHash}/transaction`)
         .then((res) => setTransactions(res.data)), 
         { refetchOnWindowFocus: false}
     );
