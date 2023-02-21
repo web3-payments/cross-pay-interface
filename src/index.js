@@ -23,7 +23,6 @@ root.render(
           <JupiterApiProvider>
             <App />
           </JupiterApiProvider>
-
         </SolanaWalletAdapterContext>
       </Provider>
     </React.StrictMode>
