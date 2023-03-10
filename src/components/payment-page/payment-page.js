@@ -6,9 +6,16 @@ import { useState } from "react";
 import { useQuery } from "react-query";
 import axios from "axios";
 import AdbIcon from "@mui/icons-material/Adb";
-import { Box, Grid, Typography} from "@mui/material";
+import {
+  Box,
+  Grid,
+  Typography,
+} from "@mui/material";
+
+
 import "./payment-page.css"
 import PaymentDetails from './payment-details';
+import { JupiterApiProvider } from "../../context/jupiter-api-context";
 
 const PaymentPage = (props) => {
   const { paymentHash } = useParams();
@@ -25,50 +32,51 @@ const PaymentPage = (props) => {
   const [paymentInfo, setPaymentInfo] = useState({});
 
   return (
-    <React.Fragment>
-      <AppBar position="static" color="primary">
-        <Toolbar>
-          <AdbIcon sx={{ display: { md: "flex" } }} />
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            href="/"
+
+      <React.Fragment>
+        <AppBar position="static" color="primary">
+          <Toolbar>
+            <AdbIcon sx={{ display: { md: "flex" } }} />
+            <Typography
+              variant="h6"
+              noWrap
+              component="a"
+              href="/"
+              sx={{
+                display: { md: "flex" },
+                fontFamily: "monospace",
+                fontWeight: 700,
+                letterSpacing: ".3rem",
+                color: "inherit",
+                textDecoration: "none",
+              }}
+            >
+              CrossPay
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <br />
+        <Box component="main" sx={{ flexGrow: 1, p: 2 }}>
+          <Grid
+            container
+            spacing={3}
             sx={{
-              display: { md: "flex" },
-              fontFamily: "monospace",
-              fontWeight: 700,
-              letterSpacing: ".3rem",
-              color: "inherit",
-              textDecoration: "none",
+              p: 2,
+              display: { xs: "block", lg: "flex" },
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            CrossPay
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <br />
-      <Box component="main" sx={{ flexGrow: 1, p: 2 }}>
-        <Grid
-          container
-          spacing={3}
-          sx={{
-            p: 2,
-            display: { xs: "block", lg: "flex" },
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Grid item lg={6}>
-            <PaymentDetails
-              paymentInfo={paymentInfo}
-              setPaymentInfo={setPaymentInfo}
-            />
+            <Grid item lg={6}>
+              <PaymentDetails
+                paymentInfo={paymentInfo}
+                setPaymentInfo={setPaymentInfo}
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
-      {/* <div className="footer">Powered by CrossPay | terms | privacy</div> */}
-    </React.Fragment>
+        </Box>
+        {/* <div className="footer">Powered by CrossPay | terms | privacy</div> */}
+      </React.Fragment>
   );
 };
 

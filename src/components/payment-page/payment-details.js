@@ -1,8 +1,7 @@
 import React from 'react'
-import { useState } from 'react';
+import { useState, useEffect, } from 'react';
 import { Contract, ethers } from "ethers";
 import * as PaymentContract from "../../abis/payment/PaymentContract.json";
-import * as ERC20 from "../../abis/ERC20/ERC20.json";
 import axios from "axios";
 import { getWalletProvider } from "../../utils/ethereum-wallet-provider";
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -18,34 +17,214 @@ import {
     Grid,
     Typography,
     IconButton, TextField, FormControl, InputLabel, Select, MenuItem,
-    List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction
+    List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction, Container
 } from '@mui/material';
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
-import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+import { useAnchorWallet, useConnection, useWallet, } from '@solana/wallet-adapter-react';
+import { AddressLookupTableAccount, PublicKey, sendAndConfirmRawTransaction, sendAndConfirmTransaction, Transaction, TransactionMessage, VersionedTransaction, } from "@solana/web3.js";
+import { AnchorProvider as SolanaProvider, BN } from '@project-serum/anchor';
+import Autocomplete from '@mui/material/Autocomplete';
+import { styled } from '@mui/material/styles';
+
+import parse from 'autosuggest-highlight/parse';
+import match from 'autosuggest-highlight/match';
+
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import idl from '../../idl/cross_pay_solana.json';
-import { Program, AnchorProvider as SolanaProvider, web3, BN } from '@project-serum/anchor';
-import { getAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token";
+
+
+import { useJupiterApiContext } from "../../context/jupiter-api-context";
+import { fromUIAmount, getBalance, getPaymentInstruction, paySolanaNativeToken, paySolanaToken, SOL_MINT, } from '../../utils/sol-transaction-helpers';
+import { fromWei, paymentERC20, payUsingEth, toWei } from '../../utils/eth-transaction-helpers';
+
+const Item = styled(Container)(({ theme }) => ({
+    backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+}));
+
 
 const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
-    const opts = {preflightCommitment: "processed"}
-    const { connection } = useConnection();
-    const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
-    const wallet = useAnchorWallet();
-    const { publicKey, sendTransaction, connected } = useWallet();
+
+
+
     const [isLoading, setIsLoading] = useState(false);
     const [alert, setAlert] = useState();
     const [alertOpen, setAlertOpen] = useState();
     const [paymentConfirmation, setPaymentConfirmation] = useState({});
-    const toWei = (num, decimals) => ethers.utils.parseUnits(num.toString(), decimals.toString());
-    const fromWei = (num, decimals) => ethers.utils.formatUnits(num.toString(), decimals.toString());
+    const [selectedBlockchain, setSelectedBlockchain] = useState();
+    const [hasEnoughTokens, setHasEnoughTokens] = useState(true);
+    const [possibleInputs, setPossibleInputs] = useState([]);
+    const [selectedToken, setSelectedToken] = useState();
+
+
+    const { setVisible: setOpenSolanaWalletDialog } = useWalletModal();
+    const { signMessage, publicKey, disconnect: disconnectSolWallet, connected, wallet } = useWallet();
+    const { connection } = useConnection();
+    const anchorWallet = useAnchorWallet();
+    const { tokenMap, routeMap, tokenNameMap, loaded, api } = useJupiterApiContext();
+
+    useEffect(() => {
+        if (selectedBlockchain === "Solana" && connected) {
+            completePaymentOnSolana()
+        }
+    }, [publicKey, routeMap])
+
+    const swapAndPay = async (selected,) => {
+
+
+        const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
+
+        const EXPECTED_TOKEN_MINT = paymentInfo.cryptocurrency.nativeToken ? SOL_MINT : paymentInfo.cryptocurrency.address;
+        const provider = await getSolanaWalletProvider()
+
+        setIsLoading(true);
+
+        try {
+
+            // check if user has enough of the selected balance
+            const balanceOfSelectedToken = await getBalance(provider, selected.symbol === "SOL", new PublicKey(selected.address))
+
+            const balanceOfExpectedToken = await getBalance(provider, paymentInfo.cryptocurrency.nativeToken, new PublicKey(SOL_MINT))
+
+
+            let amountOfExpectedTokenToBuy = paymentInfo?.amount - balanceOfExpectedToken;
+            if (paymentInfo.cryptocurrency.nativeToken) {
+                amountOfExpectedTokenToBuy += amountOfExpectedTokenToBuy * .01
+            }
+
+            if (balanceOfSelectedToken > 0) {
+
+
+
+
+                const routes = await api
+                    .v4QuoteGet({
+                        amount: Math.ceil(fromUIAmount(amountOfExpectedTokenToBuy, paymentInfo.cryptocurrency.decimals)),
+                        inputMint: selected.address,
+                        outputMint: EXPECTED_TOKEN_MINT,
+                        slippage: 1,
+                        swapMode: "ExactOut"
+                    }).then(res => res.data)
+
+
+
+                const {
+                    swapTransaction,
+                } = await api.v4SwapPost({
+                    body: {
+                        route: routes[0],
+                        userPublicKey: publicKey.toBase58(),
+                        wrapUnwrapSOL: true,
+                    }
+                })
+
+                const swapTransactionFromJupiterAPI = swapTransaction
+                const swapTransactionBuf = Buffer.from(swapTransactionFromJupiterAPI, 'base64')
+                var transaction = VersionedTransaction.deserialize(swapTransactionBuf)
+
+
+                // get address lookup table accounts
+                const addressLookupTableAccounts = await Promise.all(
+                    transaction.message.addressTableLookups.map(async (lookup) => {
+                        return new AddressLookupTableAccount({
+                            key: lookup.accountKey,
+                            state: AddressLookupTableAccount.deserialize(await connection.getAccountInfo(lookup.accountKey).then((res) => { return res.data })),
+                        })
+                    }))
+                // decompile transaction message and add transfer instruction
+                var message = TransactionMessage.decompile(transaction.message, { addressLookupTableAccounts: addressLookupTableAccounts })
+
+                const crosspayPaymentInstruction = await getPaymentInstruction(provider, programID, paymentInfo,)
+
+                message.instructions.push(crosspayPaymentInstruction)
+
+                // compile the message and update the transaction
+                transaction.message = message.compileToV0Message(addressLookupTableAccounts)
+
+                //add payment transaction
+                try {
+                   
+                    await provider.sendAndConfirm(transaction,)
+                    setIsLoading(false);
+                    return triggerAlert("success", "Success", `Payment completed using`, `${selected.symbol} `)
+                } catch (error) {
+                    console.log(error);
+                    setIsLoading(false);
+                    return triggerAlert("error", "Error", `Payment using ${selected.symbol} failed `, `Try again or Contact the provider.`)
+                }
+            } else {
+                setIsLoading(false);
+                return triggerAlert("error", "Error", `you don't have enough ${selected.symbol} `, `select another token to pay`)
+            }
+
+        } catch (err) {
+            console.log(err);
+        }
+        setIsLoading(false);
+    }
+
+
+
+
+    const handleUpdateSelected = async (value) => {
+        if (!value) return
+        setSelectedToken(tokenNameMap.get(value));
+    }
+    const completePaymentOnSolana = async () => {
+        setSelectedBlockchain("")
+
+        const provider = await getSolanaWalletProvider()
+
+        if (paymentInfo.cryptocurrency.nativeToken) {
+
+            const userBalance = await getBalance(provider, true)
+            if (userBalance < paymentInfo?.amount) {
+                triggerAlert("error", "Error", `you don't have enough ${paymentInfo?.cryptocurrency.symbol} to complete this payment `, `select another token to pay`)
+
+                setPossibleInputs(routeMap.get(SOL_MINT) ?? [])
+
+                return setHasEnoughTokens(false)
+            }
+            // user has enough of the primary native currency
+            //proceed to pay
+            await paySolana()
+        } else {
+
+            const userBalance = await getBalance(provider, false, new PublicKey(paymentInfo.cryptocurrency.address))
+
+            if (userBalance < paymentInfo.amount) {
+                setPossibleInputs(routeMap.get(paymentInfo.cryptocurrency.address))
+                triggerAlert("error", "Error", "Insufficient funds", `Select another payment method`)
+                return setHasEnoughTokens(false)
+            }
+            // user has enough of the primary currency
+            //proceed to pay
+            await paySolana()
+        }
+        return
+    }
+
+
     const triggerAlert = (severity, title, message, strongMessage) => {
         setAlertOpen(true);
         setAlert({ severity: severity, title: title, message: message, strongMessage: strongMessage });
     }
     const pay = async () => {
+        if (paymentInfo.cryptocurrency.network.name == "Solana") {
+            if (connected) {
+                await disconnectSolWallet()
+            }
+            setSelectedBlockchain("Solana")
+            setOpenSolanaWalletDialog(true)
+        } else {
+            setSelectedBlockchain("ethereum")
+            await payEth()
+        }
+    }
+    const payEth = async () => {
         if (mock) {
             return;
         }
@@ -79,7 +258,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             let transactionDetails;
             if (paymentInfo.cryptocurrency.nativeToken) {
                 try {
-                    transactionDetails = await paymentNativeToken(paymentContract, paymentInfo);
+                    transactionDetails = await payUsingEth(paymentContract, paymentInfo);
                 } catch (error) {
                     setIsLoading(false);
                     console.error(error)
@@ -101,56 +280,32 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         }
         setIsLoading(false);
         triggerAlert("success", "Success", "Payment Executed!", null);
-    }   
-    const getSolanaWalletProvider = async() => {
-        if(!wallet){
+    }
+
+    const getSolanaWalletProvider = async () => {
+        if (!wallet) {
             return null;
         }
-        const provider = new SolanaProvider(
-            connection, wallet, opts.preflightCommitment,
-          );
-        return provider;
-    } 
 
-    //TODO: refactor this 
-    // we must have one only method pay that can handle any blockchain payment. 
-    // we need to see the similarity from ethereum payment and solana to make it unique
+        const provider = new SolanaProvider(connection, anchorWallet, { skipPreflight: true })
+
+        return provider;
+    }
+
+
+
     const paySolana = async () => {
         if (mock) {
             return;
         }
-        if(!connected){
-            await setOpenSolanaWalletDialog(true)
-        }
         setIsLoading(true);
-        const programId = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
-        const provider = await getSolanaWalletProvider();
-        const program = new Program(idl, programId, provider);
-        //PDAs
-        const [adminStateAccount, _] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("admin_state"),
-            ],
-            programId
-        );
-        const [feeAccountSigner, __] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("fee_account_signer"),
-            ],
-            programId
-        );
-
-        const [solFeeAccount, ___] = web3.PublicKey.findProgramAddressSync(
-            [
-            Buffer.from("sol_fee_account"),
-            feeAccountSigner.toBuffer(),
-            ],
-            programId
-        );
+        const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
         let transactionDetails;
         if (paymentInfo.cryptocurrency.nativeToken) {
             try {
-                transactionDetails = await paySolanaNativeToken(program, paymentInfo, adminStateAccount, feeAccountSigner, solFeeAccount);
+                const provider = await getSolanaWalletProvider()
+
+                transactionDetails = await paySolanaNativeToken(provider, programID, paymentInfo, setIsLoading, triggerAlert,);
             } catch (error) {
                 setIsLoading(false);
                 console.error(error)
@@ -158,14 +313,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                 return;
             }
         } else {
-            try {
-                transactionDetails = await paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner);
-            } catch (error) {
-                setIsLoading(false);
-                console.error(error)
-                triggerAlert("error", "Error", "An error occur!", "Contact the provider.");
-                return;
-            }
+            const provider = await getSolanaWalletProvider();
+            await paySolanaToken(provider, programID, paymentInfo, setIsLoading, triggerAlert,);
         }
         await callPaymentConfirmation(transactionDetails);
         console.log("Payment confirmed");
@@ -173,153 +322,11 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         triggerAlert("success", "Success", "Payment Executed!", null);
     }
 
-    async function paySolanaNativeToken(program, paymentInfo, adminStateAccount, feeAccountSigner, solFeeAccount){
-        let txn;
-        try {
-             txn = await program.methods
-                .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
-                .accounts({
-                    client: new PublicKey(paymentInfo.creditAddress),
-                    customer: wallet.publicKey,
-                    adminState: adminStateAccount,
-                    solFeeAccount: solFeeAccount, 
-                    feeAccountSigner: feeAccountSigner, 
-                })
-                .transaction();
-          } catch (err) {
-            console.log("Transaction error: ", err);
-          }
-        if(txn === undefined){
-            setIsLoading(false);
-            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
-            return;
-        }
-        const lastestBlockHash = await connection.getLatestBlockhash();
-        txn.recentBlockhash = lastestBlockHash.blockhash;
-        txn.feePayer = wallet.publicKey;
-        txn.blockNumber = lastestBlockHash.lastValidBlockHeight;
-        const estimatedFee = await txn.getEstimatedFee(connection);
-        const txnfinal = await window.solana.signAndSendTransaction(txn);
-        const transactionDetails = {
-            transactionHash: txnfinal.signature,
-            blockHash: lastestBlockHash.blockhash,
-            blockNumber: lastestBlockHash.lastValidBlockHeight,
-            gasUsed: estimatedFee,
-            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
-            fromAddress: txnfinal.publicKey
-        };
-        return transactionDetails;
-    }
 
-    async function paySolanaToken(program, paymentInfo, adminStateAccount, feeAccountSigner) {
-        const mintToken = new PublicKey(paymentInfo.cryptocurrency.address)
-        //const recipientAddress = new PublicKey("2RqrRYTKkr8SAfMYqrtZ9Bj8uUXw3Wde6UjjD4wj4iPH");
-        const recipientAddress = new PublicKey(paymentInfo.creditAddress);
-        // let transactionInstructions = [] // add all instructions here to approve only once
-        //create associated token accounts
-        let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, wallet.publicKey);
-        const fromTokenAccount = await getAccount(connection, associatedTokenFrom);
-        const associatedTokenTo = await getAssociatedTokenAddress(mintToken,recipientAddress);
-        if(!await connection.getAccountInfo(associatedTokenTo)){
-            console.log("need create associate account");
-            let transaction = new Transaction().add(
-                createAssociatedTokenAccountInstruction(
-                    publicKey,
-                    associatedTokenTo,
-                    recipientAddress,
-                    mintToken
-                )
-            );
-            const lastestBlockHash = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = lastestBlockHash.blockhash;
-            transaction.feePayer = wallet.publicKey;
-            transaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
-            console.log("transaction", transaction)
-            await window.solana.signAndSendTransaction(transaction)
-        };
-        const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
-        let paymentTransaction = await program.methods
-            .payWithToken(new BN(toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals).toString()))
-            .accounts({
-                client: recipientAddress,  
-                customer: wallet.publicKey,
-                tokenMint: mintToken, 
-                clientTokenAccount: associatedTokenTo,
-                customerTokenAccount: fromTokenAccount.address,
-                tokenFeeAccount: tokenFeeAccount, 
-                feeAccountSigner: feeAccountSigner,
-                adminState: adminStateAccount,
-            })
-            .transaction();
-        if(paymentTransaction === undefined){
-            setIsLoading(false);
-            triggerAlert("error", "Error", "An error occur!", "Contact the provider.")
-            return;
-        }
-        const lastestBlockHash = await connection.getLatestBlockhash();
-        paymentTransaction.recentBlockhash = lastestBlockHash.blockhash;
-        paymentTransaction.feePayer = wallet.publicKey;
-        paymentTransaction.blockNumber = lastestBlockHash.lastValidBlockHeight;
-        const estimatedFee = await paymentTransaction.getEstimatedFee(connection);
-        let txnFinal = await window.solana.signAndSendTransaction(paymentTransaction)
-        const transactionDetails = {
-            transactionHash: txnFinal.signature,
-            blockHash: lastestBlockHash.blockhash,
-            blockNumber: lastestBlockHash.lastValidBlockHeight,
-            gasUsed: estimatedFee,
-            toAddress: paymentInfo.creditAddress, // TODO: see how to get this data from the txn instructions
-            fromAddress: txnFinal.publicKey
-        };
-        console.log(transactionDetails);
-        return transactionDetails;
-    }
 
-    async function paymentNativeToken(paymentContract, paymentInfo) {
-        const transaction = await paymentContract.pay(paymentInfo.creditAddress, { value: ethers.utils.parseEther(paymentInfo.amount.toString()) }); // use the amount from the paymentInfo
-        console.log(`Payment Transaction Hash: ${transaction.hash}`);
-        const result = await transaction.wait();
-        console.log(result);
-        console.log("Payment Executed");
-        const transactionDetails = {
-            transactionHash: transaction.hash,
-            blockHash: result.blockHash,
-            blockNumber: result.blockNumber,
-            gasUsed: result.gasUsed.toString(),
-            toAddress: result.to,
-            fromAddress: result.from,
-            confirmations: result.confirmations
-        };
-        return transactionDetails;
-    }
 
-    async function paymentERC20(paymentContract, paymentInfo, signer) {
-        // TODO: Create a util class to handle smart contract operations // paymentExecution
-        const ERC20Contract = new Contract(
-            paymentInfo.cryptocurrency.address,
-            ERC20.abi,
-            signer
-        );
-        const approvalTransaction = await ERC20Contract.approve(paymentInfo.cryptocurrency.smartContract.address,
-            toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
-        console.log(`Approval Transaction Hash: ${approvalTransaction.hash}`);
-        const approvalResult = await approvalTransaction.wait();
-        console.log(approvalResult);
-        const transaction = await paymentContract.payUsingToken(paymentInfo.creditAddress, paymentInfo.cryptocurrency.address, toWei(paymentInfo.amount, paymentInfo.cryptocurrency.decimals));
-        console.log(`Payment Transaction Hash: ${transaction.hash}`);
-        const result = await transaction.wait();
-        console.log(result);
-        console.log("ERC20 Payment Executed");
-        const transactionDetails = {
-            transactionHash: transaction.hash,
-            blockHash: result.blockHash,
-            blockNumber: result.blockNumber,
-            gasUsed: result.gasUsed.toString(),
-            toAddress: result.to,
-            fromAddress: result.from,
-            confirmations: result.confirmations
-        };
-        return transactionDetails;
-    }
+
+
 
     const handleCustomerInfo = (event) => {
         setPaymentConfirmation({ ...paymentConfirmation, ["customerInfo"]: { ...paymentConfirmation.customerInfo, [event.target.name]: event.target.value } })
@@ -347,6 +354,9 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     }
 
     const isReadyToPay = () => {
+        if (!hasEnoughTokens) {
+            return false;
+        }
         if (paymentInfo?.paymentStatus === "DEACTIVATED") {
             return false;
         }
@@ -434,6 +444,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                                         <List sx={{ textTransform: 'capitalize' }} dense={true}>
                                             {paymentInfo?.products?.length > 0 &&
                                                 paymentInfo?.products.map((product) => (
+
                                                     <ListItem key={product.item.id}>
                                                         <ListItemAvatar>
                                                             <Avatar
@@ -611,18 +622,76 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                         </CardContent>
                         <Divider />
                         <Box sx={{ display: 'center', justifyContent: 'center', p: 2 }}>
-                            {paymentInfo?.cryptocurrency?.network.name === 'Solana' ?
-                                (
-                                    <Button color="primary" variant="contained" onClick={paySolana} disabled={!isReadyToPay() && !mock}>
-                                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
-                                    </Button>
+                            {hasEnoughTokens ? <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
+                                Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
+                            </Button> :
+                                <>
+                                    <Grid item md={6} xs={12}>
+                                        <Item width="100%">
+                                            <InputLabel required >Select Token</InputLabel>
+                                        </Item>
+                                        <FormControl fullWidth >
 
-                                ) :
-                                (
-                                    <Button color="primary" variant="contained" onClick={pay} disabled={!isReadyToPay() && !mock}>
-                                        Pay {paymentInfo?.amount} {paymentInfo?.cryptocurrency?.symbol}
-                                    </Button>
-                                )}
+                                            <Autocomplete
+                                                id="select-token"
+                                                // sx={{ width: 300 }}
+                                                options={possibleInputs}
+                                                getOptionLabel={(tokenMint) => {
+                                                    const name = tokenMap.get(tokenMint)?.name;
+                                                    if (!name) return
+                                                    return name
+                                                }}
+                                                renderInput={(params) => {
+                                                    try {
+
+                                                        handleUpdateSelected(params.inputProps.value)
+                                                    } catch (error) {
+                                                        console.log(error);
+                                                    }
+                                                    return (
+                                                        <TextField {...params} label={selectedToken?.name || ""} margin="normal" />
+                                                    )
+                                                }}
+                                                renderOption={(props, tokenMint, { inputValue }) => {
+                                                    let option, parts
+                                                    try {
+                                                        option = tokenMap.get(tokenMint);
+                                                        if (!option) return
+                                                        const matches = match(option.name, inputValue, { insideWords: true });
+                                                        parts = parse(option.name, matches);
+                                                    } catch (error) {
+                                                        console.log(error);
+                                                    }
+
+
+                                                    return (
+                                                        <li {...props}>
+                                                            <div>
+                                                                {parts.map((part, index) => (
+                                                                    <span
+                                                                        key={index}
+                                                                        style={{
+                                                                            fontWeight: part.highlight ? 700 : 400,
+                                                                        }}
+                                                                    >
+                                                                        {part.text}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <Item >
+                                            {selectedToken && <Button color="primary" variant="contained" onClick={() => { swapAndPay(selectedToken) }} >
+                                                Pay with {selectedToken.symbol}
+                                            </Button>}
+
+                                        </Item>
+                                    </Grid>
+                                </>
+                            }
                         </Box>
                         <Box sx={{ display: 'center', justifyContent: 'center', p: 1 }}>
                             <Typography color="textSecondary" variant="overline"  >
@@ -630,10 +699,11 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                             </Typography>
                         </Box>
                     </Card>
+
                 </Box>
             )}
         </>
     );
 }
 
-export default PaymentDetails;
+export default PaymentDetails; 
