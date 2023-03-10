@@ -288,12 +288,14 @@ export async function getPaymentInstruction(provider, programId, paymentInfo,) {
     );
 
     const program = new Program(idl, programId, provider);
+    const recipientAddress = new PublicKey(paymentInfo.creditAddress);
 
     if (paymentInfo.cryptocurrency.nativeToken) {
+
         return await program.methods
             .payWithSol(new BN(paymentInfo.amount * LAMPORTS_PER_SOL))
             .accounts({
-                client: new PublicKey(paymentInfo.creditAddress),
+                client: recipientAddress,
                 customer: provider.wallet.publicKey,
                 adminState: adminStateAccount,
                 solFeeAccount: solFeeAccount,
@@ -302,7 +304,6 @@ export async function getPaymentInstruction(provider, programId, paymentInfo,) {
 
     } else {
         const tokenMint = new PublicKey(paymentInfo.cryptocurrency.address)
-        const recipientAddress = new PublicKey(paymentInfo.creditAddress);
         let associatedTokenFrom = await getAssociatedTokenAddress(tokenMint, provider.wallet.publicKey);
         const associatedTokenTo = await getAssociatedTokenAddress(tokenMint, recipientAddress);
 

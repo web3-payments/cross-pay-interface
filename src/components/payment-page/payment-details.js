@@ -73,6 +73,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
     }, [publicKey, routeMap])
 
     const swapAndPay = async (selected,) => {
+
+
         const programID = new PublicKey(paymentInfo.cryptocurrency.smartContract.address);
 
         const EXPECTED_TOKEN_MINT = paymentInfo.cryptocurrency.nativeToken ? SOL_MINT : paymentInfo.cryptocurrency.address;
@@ -88,9 +90,15 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
             const balanceOfExpectedToken = await getBalance(provider, paymentInfo.cryptocurrency.nativeToken, new PublicKey(SOL_MINT))
 
 
-            const amountOfExpectedTokenToBuy = paymentInfo?.amount - balanceOfExpectedToken;
+            let amountOfExpectedTokenToBuy = paymentInfo?.amount - balanceOfExpectedToken;
+            if (paymentInfo.cryptocurrency.nativeToken) {
+                amountOfExpectedTokenToBuy += amountOfExpectedTokenToBuy * .01
+            }
 
             if (balanceOfSelectedToken > 0) {
+
+
+
 
                 const routes = await api
                     .v4QuoteGet({
@@ -111,7 +119,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                         userPublicKey: publicKey.toBase58(),
                         wrapUnwrapSOL: true,
                     }
-                });
+                })
 
                 const swapTransactionFromJupiterAPI = swapTransaction
                 const swapTransactionBuf = Buffer.from(swapTransactionFromJupiterAPI, 'base64')
@@ -138,7 +146,8 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
 
                 //add payment transaction
                 try {
-                   await provider.sendAndConfirm(transaction)
+                   
+                    await provider.sendAndConfirm(transaction,)
                     setIsLoading(false);
                     return triggerAlert("success", "Success", `Payment completed using`, `${selected.symbol} `)
                 } catch (error) {
