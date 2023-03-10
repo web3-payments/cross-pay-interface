@@ -57,10 +57,11 @@ export const getOrCreateATA = async (provider, tokenMint) => {
 }
 
 
-export const getATA = async (provider, tokenMint) => {
+export const getATA = async (provider, tokenMint, owner = provider.wallet.publicKey) => {
     const userATA = await getAssociatedTokenAddress(
         tokenMint,
-        provider.wallet.publicKey,
+        owner,
+        true
     )
 
     let account;
@@ -72,6 +73,26 @@ export const getATA = async (provider, tokenMint) => {
     // if getAccount throws error, send null
     //meaning user does not have that token
     return account;
+}
+
+
+export async function getInitTokenAccountInstruction(provider, tokenMint, owner) {
+
+    let userATA = await getATA(provider, tokenMint,owner)
+
+    if (!userATA) {
+    userATA = await getAssociatedTokenAddress(
+        tokenMint,
+        owner
+    )
+    return createAssociatedTokenAccountInstruction(
+        provider.wallet.publicKey,
+        userATA,
+        owner,
+        tokenMint,
+    )
+    }
+    return null;
 }
 
 export const getBalance = async (provider, isNative = false, tokenMint) => {
@@ -280,27 +301,28 @@ export async function getPaymentInstruction(provider, programId, paymentInfo,) {
             }).instruction();
 
     } else {
-        const mintToken = new PublicKey(paymentInfo.cryptocurrency.address)
+        const tokenMint = new PublicKey(paymentInfo.cryptocurrency.address)
         const recipientAddress = new PublicKey(paymentInfo.creditAddress);
-        let associatedTokenFrom = await getAssociatedTokenAddress(mintToken, provider.wallet.publicKey);
-        const associatedTokenTo = await getAssociatedTokenAddress(mintToken, recipientAddress);
+        let associatedTokenFrom = await getAssociatedTokenAddress(tokenMint, provider.wallet.publicKey);
+        const associatedTokenTo = await getAssociatedTokenAddress(tokenMint, recipientAddress);
 
 
-        const tokenFeeAccount = await getAssociatedTokenAddress(mintToken, feeAccountSigner, true);
+        const tokenFeeAccount = await getAssociatedTokenAddress(tokenMint, feeAccountSigner, true);
 
-        let paymentTransaction = await program.methods
+
+       return await program.methods
             .payWithToken(new BN(fromUIAmount(paymentInfo.amount, paymentInfo.cryptocurrency.decimals).toString()))
             .accounts({
                 client: recipientAddress,
                 customer: provider.wallet.publicKey,
-                tokenMint: mintToken,
+                tokenMint,
                 clientTokenAccount: associatedTokenTo,
                 customerTokenAccount: associatedTokenFrom,
                 tokenFeeAccount: tokenFeeAccount,
                 feeAccountSigner: feeAccountSigner,
                 adminState: adminStateAccount,
             }).instruction()
-        return paymentTransaction
+       
     }
 }
 

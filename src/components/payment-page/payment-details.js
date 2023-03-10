@@ -22,7 +22,7 @@ import {
 import AlertAction from '../utils/alert-actions/alert-actions';
 import LoadingSpinner from '../utils/loading-spinner/loading-spinner';
 import { useAnchorWallet, useConnection, useWallet, } from '@solana/wallet-adapter-react';
-import { AddressLookupTableAccount, PublicKey, sendAndConfirmRawTransaction, sendAndConfirmTransaction, TransactionMessage, VersionedTransaction, } from "@solana/web3.js";
+import { AddressLookupTableAccount, PublicKey, sendAndConfirmRawTransaction, sendAndConfirmTransaction, Transaction, TransactionMessage, VersionedTransaction, } from "@solana/web3.js";
 import { AnchorProvider as SolanaProvider, BN } from '@project-serum/anchor';
 import Autocomplete from '@mui/material/Autocomplete';
 import { styled } from '@mui/material/styles';
@@ -81,37 +81,27 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
         setIsLoading(true);
 
         try {
-            const cryptoCurrencyPriceWRTSelectedToken = await api.v4PriceGet({
-                ids: paymentInfo.cryptocurrency.symbol,
-                vsToken: selected.symbol,
-            })
-
 
             // check if user has enough of the selected balance
             const balanceOfSelectedToken = await getBalance(provider, selected.symbol === "SOL", new PublicKey(selected.address))
 
             const balanceOfExpectedToken = await getBalance(provider, paymentInfo.cryptocurrency.nativeToken, new PublicKey(SOL_MINT))
 
-            //price of `paymentInfo.cryptocurrency` using selected as quote
-            //saves us from calculating in stables first
-            //eg. how many BONK do we sell to be able to buy 1 sol
-            const price = Number(cryptoCurrencyPriceWRTSelectedToken.data[paymentInfo.cryptocurrency.symbol].price)
+
             const amountOfExpectedTokenToBuy = paymentInfo?.amount - balanceOfExpectedToken;
-            const amountOfSelectedTokenToSell = price * amountOfExpectedTokenToBuy
-            //to account for slippage -- extra tokens will remain in the users wallet
-            const amountToSell = amountOfSelectedTokenToSell + amountOfSelectedTokenToSell * 0.1;
-            console.log(price, amountOfSelectedTokenToSell);
 
             if (balanceOfSelectedToken > 0) {
 
-
                 const routes = await api
                     .v4QuoteGet({
-                        amount: Math.ceil(fromUIAmount(amountToSell, selected.decimals)),
+                        amount: Math.ceil(fromUIAmount(amountOfExpectedTokenToBuy, paymentInfo.cryptocurrency.decimals)),
                         inputMint: selected.address,
                         outputMint: EXPECTED_TOKEN_MINT,
                         slippage: 1,
+                        swapMode: "ExactOut"
                     }).then(res => res.data)
+
+
 
                 const {
                     swapTransaction,
@@ -122,6 +112,7 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                         wrapUnwrapSOL: true,
                     }
                 });
+
                 const swapTransactionFromJupiterAPI = swapTransaction
                 const swapTransactionBuf = Buffer.from(swapTransactionFromJupiterAPI, 'base64')
                 var transaction = VersionedTransaction.deserialize(swapTransactionBuf)
@@ -137,15 +128,17 @@ const PaymentDetails = ({ paymentInfo, mock, setPaymentInfo }) => {
                     }))
                 // decompile transaction message and add transfer instruction
                 var message = TransactionMessage.decompile(transaction.message, { addressLookupTableAccounts: addressLookupTableAccounts })
+
                 const crosspayPaymentInstruction = await getPaymentInstruction(provider, programID, paymentInfo,)
 
                 message.instructions.push(crosspayPaymentInstruction)
+
                 // compile the message and update the transaction
                 transaction.message = message.compileToV0Message(addressLookupTableAccounts)
 
                 //add payment transaction
                 try {
-                    await provider.sendAndConfirm(transaction,)
+                   await provider.sendAndConfirm(transaction)
                     setIsLoading(false);
                     return triggerAlert("success", "Success", `Payment completed using`, `${selected.symbol} `)
                 } catch (error) {

@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import { clusterApiUrl } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 
-import { LedgerWalletAdapter,  SolflareWalletAdapter, } from '@solana/wallet-adapter-wallets';
+import { LedgerWalletAdapter,  PhantomWalletAdapter,  SolflareWalletAdapter, } from '@solana/wallet-adapter-wallets';
 
 import {
     WalletModalProvider,
@@ -27,7 +27,7 @@ export const SolanaWalletAdapterContext = ({ children }) => {
 
     const wallets = useMemo(
         () => [
-
+            new PhantomWalletAdapter({}),
             new SolflareWalletAdapter({ network }),
             new LedgerWalletAdapter({}),
         ],
